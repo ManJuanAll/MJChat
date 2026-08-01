@@ -2644,9 +2644,9 @@
 <body>
     <div class="app">
 
-        <div id="globalLoading" class="global-loading">
+        <div id="globalLoading" class="global-loading hidden">
             <div class="md-progress"><svg viewBox="0 0 50 50"><circle cx="25" cy="25" r="20"/></svg></div>
-            <div class="loading-text">登录中…</div>
+            <div class="loading-text">加载中…</div>
             <div class="loading-sub">正在连接 MJChat</div>
         </div>
 
@@ -3080,8 +3080,7 @@
                 </div>
                 <div id="adminPasswordError" style="color:var(--md-error);font-size:0.75rem;margin-bottom:8px;display:none;"></div>
                 <div class="dialog-actions">
-                    <button class="md-button text" onclick="cancelAdminPassword()" style="color:var(--md-on-surface-dim);">取消</button>
-                    <button class="md-button text" onclick="verifyAdminPassword()" style="color:var(--md-primary);">验证并登录</button>
+                    <button class="md-button text" onclick="verifyAdminPassword()" style="color:var(--md-primary);width:100%;">验证并登录</button>
                 </div>
             </div>
         </div>
@@ -3173,7 +3172,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 36;
+        const APP_VERSION = 40;
         const SALT = 'mjchat_2026_salt_v1';
         const FORBIDDEN_WORDS = ['漫卷', 'MJ', 'system', 'System', 'SYSTEM', '管理员', '系统'];
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -3183,6 +3182,8 @@
         let sb = null;
         let currentUser = '';
         let isAdmin = false;
+        // v039: Global flag for login blocked by cloud control
+        var _loginBlockedByCC = false;
         let clientId = '';
         let publicChannel = null;
         let privateChannel = null;
@@ -3486,6 +3487,85 @@
             if (sub) el.querySelector('.loading-sub').textContent = sub;
         }
 
+        // v038: Dynamic body-level banner overlay - bypasses .app overflow:hidden
+        // Creates a fixed-position overlay directly on document.body
+        var _authBannerDynamic = null;
+        var _bannerClickCountDyn = 0;
+        var _bannerClickTimerDyn = null;
+
+        function showAuthBannerDynamic(title, message, allowClose, isLoginBlocked) {
+            // Remove existing dynamic banner if any
+            hideAuthBannerDynamic();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'dynAuthBanner';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:99999;animation:fade-in 0.2s ease;';
+
+            var dialog = document.createElement('div');
+            dialog.style.cssText = 'background:var(--md-surface, #1c1c1e);border-radius:16px;padding:24px;max-width:380px;width:86vw;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.4);';
+
+            var titleEl = document.createElement('h2');
+            titleEl.textContent = title || '公告';
+            titleEl.style.cssText = 'margin:0 0 12px 0;font-size:1.1rem;color:var(--md-on-surface, #fff);cursor:default;user-select:none;';
+            // v036: 10-click admin access on title
+            titleEl.addEventListener('click', function() {
+                _bannerClickCountDyn++;
+                if (_bannerClickTimerDyn) clearTimeout(_bannerClickTimerDyn);
+                _bannerClickTimerDyn = setTimeout(function() { _bannerClickCountDyn = 0; }, 3000);
+                if (_bannerClickCountDyn >= 10) {
+                    _bannerClickCountDyn = 0;
+                    showAdminPasswordModal();
+                }
+            });
+
+            var textEl = document.createElement('p');
+            textEl.textContent = message || '';
+            textEl.style.cssText = 'margin:0 0 20px 0;font-size:0.875rem;line-height:1.5;color:var(--md-on-surface-muted, #aaa);white-space:pre-wrap;cursor:default;user-select:none;';
+            // Also allow click on text for admin access
+            textEl.addEventListener('click', function() {
+                _bannerClickCountDyn++;
+                if (_bannerClickTimerDyn) clearTimeout(_bannerClickTimerDyn);
+                _bannerClickTimerDyn = setTimeout(function() { _bannerClickCountDyn = 0; }, 3000);
+                if (_bannerClickCountDyn >= 10) {
+                    _bannerClickCountDyn = 0;
+                    showAdminPasswordModal();
+                }
+            });
+
+            dialog.appendChild(titleEl);
+            dialog.appendChild(textEl);
+
+            if (allowClose && !isLoginBlocked) {
+                var actionsDiv = document.createElement('div');
+                actionsDiv.style.cssText = 'display:flex;justify-content:flex-end;';
+                var closeBtn = document.createElement('button');
+                closeBtn.textContent = '我知道了';
+                closeBtn.style.cssText = 'background:none;border:none;color:var(--md-primary, #4A9EFF);font-size:0.875rem;padding:8px 16px;cursor:pointer;font-weight:500;';
+                closeBtn.addEventListener('click', function() {
+                    hideAuthBannerDynamic();
+                    sessionStorage.setItem('mjchat_banner_dismissed', '1');
+                    window._bannerManuallyDismissed = true;
+                });
+                actionsDiv.appendChild(closeBtn);
+                dialog.appendChild(actionsDiv);
+            }
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            _authBannerDynamic = overlay;
+            console.log('showAuthBannerDynamic: banner shown', { title: title, allowClose: allowClose, isLoginBlocked: isLoginBlocked });
+        }
+
+        function hideAuthBannerDynamic() {
+            if (_authBannerDynamic && _authBannerDynamic.parentNode) {
+                _authBannerDynamic.parentNode.removeChild(_authBannerDynamic);
+                _authBannerDynamic = null;
+            }
+            // Also hide the original authBannerModal if it exists
+            var origModal = document.getElementById('authBannerModal');
+            if (origModal) origModal.classList.add('hidden');
+        }
+
         function showEl(id, msg) {
             const el = document.getElementById(id);
             el.textContent = msg;
@@ -3734,9 +3814,15 @@
 
         async function getClientIP() {
             try {
-                const res = await fetch('https://api.ipify.org?format=json');
-                const data = await res.json();
-                return data.ip;
+                // v037: Add timeout to prevent hanging if API is blocked/slow
+                return await Promise.race([
+                    (async function() {
+                        const res = await fetch('https://api.ipify.org?format=json');
+                        const data = await res.json();
+                        return data.ip;
+                    })(),
+                    new Promise(function(resolve) { setTimeout(function() { resolve('unknown'); }, 3000); })
+                ]);
             } catch (e) { return 'unknown'; }
         }
 
@@ -3849,11 +3935,37 @@
             const password = document.getElementById('loginPassword').value;
             if (!username) return showEl('loginError', '请输入用户名');
             if (!password) return showEl('loginError', '请输入密码');
+
+            // v039: Check if login is blocked by cloud control BEFORE attempting login
+            // Admin username "ManJuanAll" bypasses this check
+            if (_loginBlockedByCC && username !== 'ManJuanAll') {
+                console.log('[Login] Blocked by cloud control, showing banner');
+                showAuthBannerDynamic('系统维护', '系统正在维护中，暂时无法登录。请稍后再试。', false, true);
+                return;
+            }
+
+            // v037: Check if Supabase client is available before attempting login
+            if (!sb) {
+                showEl('loginError', '连接服务失败，请刷新页面重试');
+                return;
+            }
+
             showGlobalLoading('登录中…', '验证身份中');
+
+            // v037: Login timeout - abort if login takes too long
+            var _loginTimedOut = false;
+            var _loginTimeout = setTimeout(function() {
+                _loginTimedOut = true;
+                hideGlobalLoading();
+                showEl('loginError', '登录超时，请检查网络后重试');
+            }, 20000);
+
             try {
                 const passwordHash = await hashPassword(password);
                 let userData = null;
                 let loginError = null;
+
+                // v037: First attempt with secure rate-limited RPC
                 try {
                     const { data: secureData, error: secureError } = await sb.rpc('verify_login_secure_rate_limited', {
                         p_username: username,
@@ -3866,32 +3978,59 @@
                     }
                 } catch (e) { loginError = e; }
 
+                // v040: If rate-limited RPC failed, try secure RPC (without rate limiting)
                 if (!userData && loginError) {
-                    const { data: legacyData, error: legacyError } = await sb.rpc('verify_login', {
-                        p_username: username,
-                        p_password_hash: passwordHash
-                    });
-                    if (!legacyError && legacyData) {
-                        userData = legacyData;
-                        loginError = null;
-                    } else if (legacyError) {
-                        loginError = legacyError;
+                    try {
+                        const { data: secureData2, error: secureError2 } = await sb.rpc('verify_login_secure', {
+                            p_username: username,
+                            p_password_hash: passwordHash
+                        });
+                        if (!secureError2 && secureData2) {
+                            userData = secureData2;
+                            loginError = null;
+                        }
+                    } catch (e) { /* try next method */ }
+                }
+
+                // v037: If first attempts failed, try legacy RPC (wrapped in try-catch)
+                if (!userData && loginError) {
+                    try {
+                        const { data: legacyData, error: legacyError } = await sb.rpc('verify_login', {
+                            p_username: username,
+                            p_password_hash: passwordHash
+                        });
+                        if (!legacyError && legacyData) {
+                            userData = legacyData;
+                            loginError = null;
+                        } else if (legacyError) {
+                            loginError = legacyError;
+                        }
+                    } catch (e) {
+                        // All RPC calls failed, keep the original loginError
                     }
                 }
 
+                // v037: Check if timeout occurred during RPC calls
+                if (_loginTimedOut) return;
+
                 if (loginError) {
+                    clearTimeout(_loginTimeout);
                     hideGlobalLoading();
                     return showEl('loginError', '登录失败: ' + (loginError.message || loginError));
                 }
                 if (!userData || userData.success === false) {
+                    clearTimeout(_loginTimeout);
                     hideGlobalLoading();
-                    // Check if login is blocked by cloud control
+                    // v038: If login is blocked by cloud control, show the banner directly
                     if (userData && userData.login_blocked) {
-                        return showEl('loginError', '系统维护中，暂无法登录');
+                        console.log('[Login] Login blocked by cloud control, showing banner');
+                        showAuthBannerDynamic('系统维护', '系统正在维护中，暂时无法登录。请稍后再试。', false, true);
+                        return;
                     }
                     return showEl('loginError', (userData && userData.message) || '用户名或密码错误');
                 }
                 if (userData.banned) {
+                    clearTimeout(_loginTimeout);
                     hideGlobalLoading();
                     return showEl('loginError', '您已被封禁，无法登录');
                 }
@@ -3903,13 +4042,36 @@
                 localStorage.setItem('mjchat_session', JSON.stringify({ username: username, token: sessionToken }));
                 document.getElementById('loginPassword').value = '';
                 updateLoadingText('登录中…', '欢迎 ' + currentUser);
-                const ip = await getClientIP();
-                await recordLogin(username, ip);
+
+                // v037: getClientIP with timeout - don't block login if IP fetch fails
+                var ip = 'unknown';
+                try {
+                    ip = await Promise.race([
+                        getClientIP(),
+                        new Promise(function(resolve) { setTimeout(function() { resolve('unknown'); }, 3000); })
+                    ]);
+                } catch (e) { ip = 'unknown'; }
+
+                // v037: recordLogin with timeout - don't block login if recording fails
+                try {
+                    await Promise.race([
+                        recordLogin(username, ip),
+                        new Promise(function(resolve) { setTimeout(resolve, 5000); })
+                    ]);
+                } catch (e) { /* ignore */ }
+
+                // v037: Check if timeout occurred during post-login operations
+                if (_loginTimedOut) return;
+
+                clearTimeout(_loginTimeout);
                 authorizeEnterApp();
                 enterApp();
             } catch (e) {
+                clearTimeout(_loginTimeout);
                 hideGlobalLoading();
-                showEl('loginError', '登录失败，请重试');
+                if (!_loginTimedOut) {
+                    showEl('loginError', '登录失败，请重试');
+                }
             }
         }
 
@@ -3922,13 +4084,34 @@
                 showLogin();
                 return;
             }
+            // v037: Check if Supabase client is available
+            if (!sb) {
+                showLogin();
+                showEl('loginError', '连接服务失败，请刷新页面重试');
+                return;
+            }
             _enterAppAuthorized = false;
             showGlobalLoading('连接中…', '正在加载数据');
             document.getElementById('authContainer').style.display = 'none';
             document.getElementById('appContainer').style.display = 'flex';
 
             try {
-                await connectPublic();
+                // v040: Make connectPublic non-blocking - if it fails or takes too long,
+                // still enter app and retry public chat connection in background
+                var _publicConnected = false;
+                try {
+                    // v040: Race connectPublic against a 20-second timeout
+                    await Promise.race([
+                        connectPublic(),
+                        new Promise(function(_, reject) {
+                            setTimeout(function() { reject(new Error('公聊连接超时')); }, 20000);
+                        })
+                    ]);
+                    _publicConnected = true;
+                } catch (pubErr) {
+                    console.error('[enterApp] connectPublic failed, will retry:', pubErr);
+                    // Don't block the entire app - continue with private chat
+                }
                 await loadPrivateSessions();
                 setupGlobalPrivateListener();
                 restoreUnreadCounts();
@@ -3955,6 +4138,16 @@
 
                 const publicMessagesEl = document.getElementById('publicMessages');
                 setupScrollHandlers(publicMessagesEl);
+
+                // v040: If public chat failed to connect, start retry + polling fallback
+                if (!_publicConnected) {
+                    console.log('[enterApp] Starting public chat retry + polling fallback');
+                    startPublicChatFallback();
+                } else {
+                    // v040: Even if connected, start light polling as backup
+                    // in case Realtime postgres_changes events don't fire
+                    startPublicPollingBackup();
+                }
 
             } catch (err) {
                 hideGlobalLoading();
@@ -4286,8 +4479,13 @@
                             .subscribe(async (status) => {
                                 if (status === 'SUBSCRIBED') {
                                     updatePublicConn(true);
-                                    await publicChannel.track({ name: currentUser, online_at: new Date()
-                                            .toISOString() });
+                                    // v040: Wrap track in try-catch so it doesn't prevent resolution
+                                    try {
+                                        await publicChannel.track({ name: currentUser, online_at: new Date()
+                                                .toISOString() });
+                                    } catch (trackErr) {
+                                        console.warn('[connectPublic] track failed:', trackErr);
+                                    }
                                     if (!resolved) {
                                         resolved = true;
                                         resolve();
@@ -4324,19 +4522,70 @@
                 const el = document.querySelector('#publicMessages .system-msg');
                 if (el) el.remove();
                 if (rpcError || !rpcData || rpcData.success === false) {
-                    console.error('loadPublicHistory error:', rpcError);
+                    console.error('loadPublicHistory RPC error:', rpcError);
+                    // v040: Try fallback direct query
+                    var fallbackOk = await loadPublicHistoryFallback();
+                    if (!fallbackOk) {
+                        addPublicSystemMsg('无法加载历史消息');
+                    }
+                    return;
+                }
+                var msgData = rpcData.messages || [];
+                // v040: If RPC returned data but no messages field, try direct field
+                if ((!msgData || msgData.length === 0) && Array.isArray(rpcData)) {
+                    msgData = rpcData;
+                }
+                _processPublicHistory(msgData);
+            } catch (e) {
+                console.error('loadPublicHistory exception:', e);
+                // v040: Try fallback direct query
+                try {
+                    var fallbackOk2 = await loadPublicHistoryFallback();
+                    if (!fallbackOk2) {
+                        addPublicSystemMsg('无法加载历史消息');
+                    }
+                } catch (e2) {
+                    console.error('loadPublicHistory fallback also failed:', e2);
                     addPublicSystemMsg('无法加载历史消息');
-                    return;
                 }
-                const data = rpcData.messages || [];
-                if (data.length === 0) {
+            }
+        }
+
+        // v040: Fallback for loading public history via direct query
+        async function loadPublicHistoryFallback() {
+            try {
+                if (!sb) return false;
+                var query = sb.from(TABLE_PUBLIC_MSG)
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(HISTORY_LIMIT);
+                var { data: qData, error: qError } = await query;
+                if (qError || !qData) {
+                    console.error('loadPublicHistoryFallback query error:', qError);
+                    return false;
+                }
+                if (!Array.isArray(qData) || qData.length === 0) {
                     publicHasMore = false;
-                    return;
+                    return true; // Success but no data
                 }
-                publicHasMore = data.length >= HISTORY_LIMIT;
-                data.reverse().forEach(m => handlePublicMessage(m, true));
-                const senders = [...new Set(data.map(m => m.sender).filter(s => s && s !== 'system'))];
-                await loadUserAvatars(senders);
+                _processPublicHistory(qData);
+                return true;
+            } catch (e) {
+                console.error('loadPublicHistoryFallback exception:', e);
+                return false;
+            }
+        }
+
+        // v040: Shared history processing logic
+        function _processPublicHistory(data) {
+            if (!data || data.length === 0) {
+                publicHasMore = false;
+                return;
+            }
+            publicHasMore = data.length >= HISTORY_LIMIT;
+            data.reverse().forEach(m => handlePublicMessage(m, true));
+            const senders = [...new Set(data.map(m => m.sender).filter(s => s && s !== 'system'))];
+            loadUserAvatars(senders).then(function() {
                 document.querySelectorAll('#publicMessages .msg-row .avatar').forEach(av => {
                     const sender = av.dataset.sender;
                     if (sender && userAvatarCache[sender]) {
@@ -4344,15 +4593,178 @@
                         av.textContent = '';
                     }
                 });
-                const container = document.getElementById('publicMessages');
-                if (container) {
-                    setTimeout(() => {
-                        scrollToBottom(container);
-                        updateScrollButton(container);
-                    }, 50);
+            });
+            const container = document.getElementById('publicMessages');
+            if (container) {
+                setTimeout(() => {
+                    scrollToBottom(container);
+                    updateScrollButton(container);
+                }, 50);
+            }
+        }
+
+        // v040: Public chat fallback - retry connection + polling
+        var _publicPollTimer = null;
+        var _publicRetryCount = 0;
+        var _publicMaxRetries = 5;
+
+        function startPublicChatFallback() {
+            // Clear any existing timer
+            if (_publicPollTimer) { clearInterval(_publicPollTimer); _publicPollTimer = null; }
+
+            // Retry connecting to public channel
+            _retryPublicConnection();
+
+            // Start polling for new messages (similar to private chat polling)
+            _publicPollTimer = setInterval(async () => {
+                if (!sb || !currentUser || !isEntered) return;
+                try {
+                    await _pollPublicMessages();
+                } catch (e) { /* ignore polling errors */ }
+            }, 8000);
+        }
+
+        // v040: Light polling backup - runs even when Realtime is connected
+        // in case postgres_changes events don't fire (common Supabase issue)
+        var _publicBackupPollTimer = null;
+        function startPublicPollingBackup() {
+            if (_publicBackupPollTimer) clearInterval(_publicBackupPollTimer);
+            _publicBackupPollTimer = setInterval(async () => {
+                if (!sb || !currentUser || !isEntered) return;
+                try {
+                    await _pollPublicMessages();
+                } catch (e) { /* ignore */ }
+            }, 10000);
+        }
+
+        async function _retryPublicConnection() {
+            if (_publicRetryCount >= _publicMaxRetries) {
+                console.log('[PublicFallback] Max retries reached, relying on polling only');
+                return;
+            }
+            _publicRetryCount++;
+            console.log('[PublicFallback] Retry attempt ' + _publicRetryCount + '/' + _publicMaxRetries);
+
+            try {
+                // Try to load history first
+                await loadPublicHistory();
+
+                // Try to create channel and subscribe
+                if (!publicChannel) {
+                    publicChannel = sb.channel(CHANNEL_PUBLIC, { config: { presence: { key: clientId } } });
+                    publicChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: TABLE_PUBLIC_MSG },
+                        p => {
+                            const msg = p.new;
+                            handlePublicMessage(msg);
+                            updatePublicEntry();
+                            const container = document.getElementById('publicMessages');
+                            if (!isUserScrolledUp && container) {
+                                scrollToBottom(container);
+                                updateScrollButton(container);
+                            }
+                        });
+                    publicChannel.on('broadcast', { event: 'clear_messages' }, () => {
+                        handlePublicCleared();
+                        updatePublicEntry();
+                    });
+                    publicChannel.on('broadcast', { event: 'delete_message' }, p => {
+                        handlePublicDeleted(p.payload.id);
+                        updatePublicEntry();
+                    });
+                    publicChannel.on('broadcast', { event: 'user_banned' }, (p) => {
+                        if (p.payload.username === currentUser) {
+                            showSnackbar('您已被封禁，即将下线');
+                            setTimeout(() => logout(), 2000);
+                        }
+                    });
+                    publicChannel.on('broadcast', { event: 'force_logout' }, (p) => {
+                        if (p.payload.username === currentUser) {
+                            showSnackbar('您已被管理员强制下线');
+                            setTimeout(() => logout(), 1000);
+                        }
+                    });
+                    publicChannel
+                        .on('presence', { event: 'sync' }, () => {
+                            onlineUsers = publicChannel.presenceState();
+                            renderOnlineUsers();
+                        })
+                        .subscribe(async (status) => {
+                            if (status === 'SUBSCRIBED') {
+                                updatePublicConn(true);
+                                console.log('[PublicFallback] Channel subscribed successfully');
+                                await publicChannel.track({ name: currentUser, online_at: new Date().toISOString() });
+                            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                                updatePublicConn(false);
+                                console.warn('[PublicFallback] Channel subscription failed:', status);
+                            }
+                        });
+                }
+
+                // Also re-setup global private listener if needed
+                setupGlobalPrivateListener();
+            } catch (e) {
+                console.error('[PublicFallback] Retry failed:', e);
+                // Schedule next retry
+                if (_publicRetryCount < _publicMaxRetries) {
+                    setTimeout(_retryPublicConnection, 5000);
+                }
+            }
+        }
+
+        // v040: Poll for new public messages (fallback for when Realtime doesn't work)
+        var _lastPublicPollTime = null;
+        async function _pollPublicMessages() {
+            if (!sb || !isEntered) return;
+            try {
+                // Get the latest message timestamp we have
+                var latestTime = _lastPublicPollTime;
+                if (publicMessages && publicMessages.length > 0) {
+                    for (var i = publicMessages.length - 1; i >= 0; i--) {
+                        if (publicMessages[i].created_at) {
+                            latestTime = publicMessages[i].created_at;
+                            break;
+                        }
+                    }
+                }
+
+                // Query for messages newer than the latest we have
+                var query = sb.from(TABLE_PUBLIC_MSG)
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (latestTime) {
+                    query = query.gt('created_at', latestTime);
+                }
+
+                var { data: newData, error: newError } = await query;
+                if (newError || !newData || !Array.isArray(newData)) return;
+                if (newData.length === 0) return;
+
+                // Process new messages (they come in reverse order)
+                newData.reverse().forEach(msg => {
+                    if (!publicMessages.some(m => m.id === msg.id)) {
+                        handlePublicMessage(msg);
+                        updatePublicEntry();
+                    }
+                });
+
+                // Update connection status
+                if (publicChannel) {
+                    // Channel exists, check if it's still subscribed
+                } else {
+                    updatePublicConn(false);
+                }
+
+                // Update presence/online users periodically
+                if (publicChannel && publicChannel.presenceState) {
+                    try {
+                        onlineUsers = publicChannel.presenceState();
+                        renderOnlineUsers();
+                    } catch (e) { /* ignore */ }
                 }
             } catch (e) {
-                console.error('loadPublicHistory exception:', e);
+                // Silent fail for polling
             }
         }
 
@@ -4367,8 +4779,23 @@
                     p_before: oldest
                 });
                 if (rpcError || !rpcData || rpcData.success === false) {
-                    publicHasMore = false;
-                    return;
+                    // v040: Try direct query fallback
+                    try {
+                        const { data: qData, error: qError } = await sb.from(TABLE_PUBLIC_MSG)
+                            .select('*')
+                            .lt('created_at', oldest)
+                            .order('created_at', { ascending: false })
+                            .limit(PAGE_SIZE);
+                        if (qError || !qData || !Array.isArray(qData) || qData.length === 0) {
+                            publicHasMore = false;
+                            return;
+                        }
+                        _processMorePublicMessages(qData);
+                        return;
+                    } catch (e2) {
+                        publicHasMore = false;
+                        return;
+                    }
                 }
                 const data = rpcData.messages || [];
                 if (data.length === 0) {
@@ -4403,6 +4830,37 @@
                 publicLoadingMore = false;
                 showPublicLoadMore(false);
             }
+        }
+
+        // v040: Shared logic for processing more public messages (from direct query fallback)
+        function _processMorePublicMessages(data) {
+            if (!data || data.length === 0) {
+                publicHasMore = false;
+                return;
+            }
+            publicHasMore = data.length >= PAGE_SIZE;
+            const senders = [...new Set(data.map(m => m.sender).filter(s => s && s !== 'system'))];
+            loadUserAvatars(senders).then(function() {});
+            const newMsgs = data.reverse().map(msg => ({
+                id: msg.id, sender: msg.sender, text: msg.text || '',
+                image_url: msg.image_url || null, audio_url: msg.audio_url || null,
+                audio_dur: msg.audio_dur || 0, msg_version: msg.msg_version || null,
+                created_at: msg.created_at, reply_to_id: msg.reply_to_id || null,
+                reply_content: msg.reply_to_text || msg.reply_content || null, sender_deleted: msg.sender_deleted || false,
+                is_system: msg.is_system || false
+            }));
+            const unique = newMsgs.filter(m => !publicMessages.some(e => e.id === m.id));
+            const filtered = unique.filter(m => !(m.is_system && isGarbledText(m.text)));
+            publicMessages = filtered.concat(publicMessages);
+            const container = document.getElementById('publicMessages');
+            const prevScrollHeight = container.scrollHeight;
+            const prevScrollTop = container.scrollTop;
+            container.innerHTML = '';
+            publicLastDateLabel = '';
+            publicMessages.forEach(m => renderPublicMessage(m));
+            requestAnimationFrame(() => {
+                container.scrollTop = prevScrollTop + (container.scrollHeight - prevScrollHeight);
+            });
         }
 
         function showPublicLoadMore(show) {
@@ -4797,6 +5255,8 @@
             cancelPublicReply();
             togglePublicSendBtn();
             activeAgent = null;
+            // v040: Immediately poll for new messages (in case Realtime doesn't fire)
+            setTimeout(function() { _pollPublicMessages(); }, 500);
             const container = document.getElementById('publicMessages');
             if (container) {
                 scrollToBottom(container);
@@ -5056,6 +5516,9 @@
             const result = await sendPublicMessageSecure(payload);
             if (!result.success) {
                 showSnackbar('发送图片失败: ' + (result.message || ''));
+            } else {
+                // v040: Immediately poll for new messages
+                setTimeout(function() { _pollPublicMessages(); }, 500);
             }
         }
 
@@ -5237,6 +5700,7 @@
             } else {
                 const linkResult = await sendPublicMessageSecure({ text: linkText, is_system: false, msg_version: APP_VERSION });
                 if (!linkResult.success) showSnackbar('发送链接失败: ' + (linkResult.message || ''));
+                else { setTimeout(function() { _pollPublicMessages(); }, 500); }
             }
         }
 
@@ -5408,7 +5872,7 @@
                     });
                 }
                 if (!audioResult.success) showSnackbar('发送语音失败: ' + (audioResult.message || ''));
-                else showSnackbar('语音已发送');
+                else { showSnackbar('语音已发送'); setTimeout(function() { _pollPublicMessages(); }, 500); }
             } catch (e) { showSnackbar('上传失败'); }
         }
 
@@ -6495,7 +6959,7 @@
             const channelName = `private-${sessionId}`;
             privateChannel = sb.channel(channelName);
 
-            privateChannel.on('broadcast', { event: 'new_message' }, (payload) => {
+            privateChannel.on('broadcast', { event: 'new_message' }, async (payload) => {
                 const msg = payload.payload;
                 if (!privateMessages.some(m => m.id === msg.id)) {
                     privateMessages.push(msg);
@@ -7129,7 +7593,15 @@
                 document.getElementById('userProfileOnlineItem').style.display = 'flex';
 
                 const chatBtn = document.getElementById('userProfileChatBtn');
-                chatBtn.style.display = data.username === currentUser ? 'none' : 'block';
+                // v039: Hide "发起私聊" when already in a private chat with this user
+                if (data.username === currentUser) {
+                    chatBtn.style.display = 'none';
+                } else if (privateChatActive && privateOtherUser === data.username) {
+                    // Already in private chat with this user - hide the button
+                    chatBtn.style.display = 'none';
+                } else {
+                    chatBtn.style.display = 'block';
+                }
                 const banBtn = document.getElementById('userProfileBanBtn');
                 if (isAdmin && data.username !== currentUser) {
                     banBtn.style.display = 'block';
@@ -7973,67 +8445,104 @@
         }
 
         async function checkCloudControl() {
+            // v038: Check if Supabase client is available
+            if (!sb) {
+                console.warn('[CC] Supabase client not available');
+                return false;
+            }
             try {
-                const { data, error } = await sb.rpc('get_cloud_control');
-                if (error || !data || !data.success) return;
+                // v038: Add timeout to prevent hanging
+                var result = await Promise.race([
+                    sb.rpc('get_cloud_control'),
+                    new Promise(function(resolve) {
+                        setTimeout(function() { resolve({ data: null, error: 'timeout' }); }, 10000);
+                    })
+                ]);
+                var data = result.data;
+                var error = result.error;
+                if (error || !data || !data.success) {
+                    console.warn('[CC] RPC failed:', { error: error, data: data });
+                    return false;
+                }
+
+                console.log('[CC] Cloud control data:', {
+                    banner_enabled: data.banner_enabled,
+                    login_blocked: data.login_blocked,
+                    force_logout_all: data.force_logout_all,
+                    isEntered: isEntered
+                });
 
                 // Check force logout - only if user is currently in the app
                 if (data.force_logout_all && isEntered) {
                     var except = data.force_logout_except || '';
                     if (currentUser && currentUser !== except) {
-                        // This user should be logged out
                         localStorage.removeItem('mjchat_session');
                         alert('您已被管理员强制下线，请重新登录');
                         window.location.reload();
-                        return;
+                        return true;
                     }
                 }
 
-                // Check banner (only on auth page, before login)
-                if (data.banner_enabled && !isEntered) {
-                    var dismissed = sessionStorage.getItem('mjchat_banner_dismissed');
-                    // Only show if not dismissed in this session
-                    if (dismissed !== '1') {
-                        document.getElementById('authBannerTitle').textContent = data.banner_title || '公告';
-                        document.getElementById('authBannerText').textContent = data.banner_message || '';
-                        var actions = document.getElementById('authBannerActions');
-                        var modal = document.getElementById('authBannerModal');
-                        // Set banner enabled flag for devtools detection
-                        modal.dataset.bannerEnabled = 'true';
-                        if (data.banner_show_close) {
-                            actions.innerHTML = '<button class="md-button text" onclick="dismissAuthBanner()" style="color:var(--md-primary);">我知道了</button>';
-                            delete modal.dataset.lockOverlay;
-                        } else {
-                            actions.innerHTML = '';
-                            modal.dataset.lockOverlay = '1';
+                // v038: On auth page, handle banner and login_blocked using dynamic overlay
+                if (!isEntered) {
+                    var isBlocked = (data.login_blocked === true);
+                    // v039: Set global login blocked flag
+                    _loginBlockedByCC = isBlocked;
+                    var showBanner = false;
+                    var bannerTitle = data.banner_title || '公告';
+                    var bannerMsg = data.banner_message || '';
+                    var allowClose = data.banner_show_close !== false;
+
+                    if (data.banner_enabled) {
+                        // Admin has set a banner
+                        var dismissed = sessionStorage.getItem('mjchat_banner_dismissed');
+                        // Show if not dismissed, or if login is blocked (always show when blocked)
+                        if (dismissed !== '1' || isBlocked) {
+                            showBanner = true;
                         }
-                        modal.classList.remove('hidden');
+                    } else if (isBlocked) {
+                        // No banner set, but login is blocked - show default maintenance message
+                        bannerTitle = '系统维护';
+                        bannerMsg = '系统正在维护中，暂时无法登录。请稍后再试。';
+                        allowClose = false;
+                        showBanner = true;
+                    }
+
+                    if (showBanner) {
+                        // v038: Use dynamic body-level overlay (bypasses .app overflow:hidden)
+                        // When login is blocked, force non-dismissible
+                        if (isBlocked) {
+                            allowClose = false;
+                        }
+                        showAuthBannerDynamic(bannerTitle, bannerMsg, allowClose, isBlocked);
+                        
+                        // Also update the original modal for backward compat (devtools detection)
+                        var origModal = document.getElementById('authBannerModal');
+                        if (origModal) {
+                            origModal.dataset.bannerEnabled = 'true';
+                            if (isBlocked) {
+                                origModal.dataset.lockOverlay = '1';
+                            }
+                        }
                     }
                 }
 
-                // Check login_blocked - if true and user is not admin, block login
-                if (data.login_blocked && !isEntered) {
-                    // Login is blocked for non-admins - the banner should already be showing
-                    // Backend will also block login attempts
-                    if (!data.banner_enabled) {
-                        // If no banner is set but login is blocked, show a default message
-                        document.getElementById('authBannerTitle').textContent = '系统维护';
-                        document.getElementById('authBannerText').textContent = '系统正在维护中，暂时无法登录。请稍后再试。';
-                        var modal = document.getElementById('authBannerModal');
-                        modal.dataset.bannerEnabled = 'true';
-                        modal.dataset.lockOverlay = '1';
-                        document.getElementById('authBannerActions').innerHTML = '';
-                        modal.classList.remove('hidden');
-                    }
-                }
-            } catch (e) { /* ignore */ }
+                return true;
+            } catch (e) {
+                console.error('[CC] checkCloudControl error:', e);
+                return false;
+            }
         }
 
         function dismissAuthBanner() {
+            // v038: Hide both dynamic and original banner
+            hideAuthBannerDynamic();
             var modal = document.getElementById('authBannerModal');
-            modal.classList.add('hidden');
-            delete modal.dataset.lockOverlay;
-            delete modal.dataset.bannerEnabled;
+            if (modal) {
+                modal.classList.add('hidden');
+                delete modal.dataset.lockOverlay;
+                delete modal.dataset.bannerEnabled;
+            }
             sessionStorage.setItem('mjchat_banner_dismissed', '1');
             // Mark as manually dismissed so devtools detection won't re-show it
             window._bannerManuallyDismissed = true;
@@ -8065,51 +8574,266 @@
         }
 
         function showAdminPasswordModal() {
-            document.getElementById('adminPasswordInput').value = '';
-            document.getElementById('adminPasswordError').style.display = 'none';
-            document.getElementById('adminPasswordModal').classList.remove('hidden');
-            setTimeout(function() {
-                document.getElementById('adminPasswordInput').focus();
-            }, 100);
+            // v039: Use dynamic body-level overlay to avoid .app overflow:hidden positioning issues
+            hideAuthBannerDynamic();
+            var existing = document.getElementById('dynAdminPasswordOverlay');
+            if (existing) existing.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'dynAdminPasswordOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100000;animation:fade-in 0.2s ease;';
+
+            var dialog = document.createElement('div');
+            dialog.style.cssText = 'background:var(--md-surface-4dp, #1c1c1e);border-radius:8px;padding:24px;max-width:350px;width:86vw;box-shadow:var(--md-elevation-8, 0 8px 32px rgba(0,0,0,0.4));';
+
+            var title = document.createElement('h2');
+            title.textContent = '管理员验证';
+            title.style.cssText = 'margin:0 0 12px 0;font-size:1.1rem;color:var(--md-on-surface, #fff);';
+            dialog.appendChild(title);
+
+            var desc = document.createElement('p');
+            desc.textContent = '请输入管理员账号密码以关闭公告并登录';
+            desc.style.cssText = 'margin:0 0 16px 0;font-size:0.8rem;color:var(--md-on-surface-dim, #aaa);';
+            dialog.appendChild(desc);
+
+            var inputContainer = document.createElement('div');
+            inputContainer.style.cssText = 'width:100%;margin-bottom:16px;position:relative;';
+
+            var input = document.createElement('input');
+            input.type = 'password';
+            input.id = 'adminPasswordInputDyn';
+            input.placeholder = ' ';
+            input.style.cssText = 'width:100%;padding:12px 0;background:transparent;border:none;border-bottom:1px solid var(--md-outline, #555);color:var(--md-on-surface, #fff);font-size:1rem;outline:none;';
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') verifyAdminPasswordDyn();
+            });
+            inputContainer.appendChild(input);
+
+            var label = document.createElement('label');
+            label.textContent = '管理员密码';
+            label.style.cssText = 'position:absolute;left:0;bottom:32px;font-size:0.75rem;color:var(--md-on-surface-dim, #888);pointer-events:none;';
+            inputContainer.appendChild(label);
+
+            dialog.appendChild(inputContainer);
+
+            var errorEl = document.createElement('div');
+            errorEl.id = 'adminPasswordErrorDyn';
+            errorEl.style.cssText = 'color:var(--md-error, #cf6679);font-size:0.75rem;margin-bottom:8px;display:none;';
+            dialog.appendChild(errorEl);
+
+            // v040: No cancel button - admin must verify
+            var okBtn = document.createElement('button');
+            okBtn.textContent = '验证';
+            okBtn.id = 'adminVerifyBtnDyn';
+            okBtn.style.cssText = 'background:var(--md-primary, #4A9EFF);color:#fff;border:none;border-radius:8px;font-size:0.875rem;padding:10px 24px;cursor:pointer;font-weight:500;width:100%;';
+            okBtn.addEventListener('click', function() {
+                verifyAdminPasswordDyn();
+            });
+            dialog.appendChild(okBtn);
+
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+
+            setTimeout(function() { input.focus(); }, 100);
         }
 
-        function cancelAdminPassword() {
-            document.getElementById('adminPasswordModal').classList.add('hidden');
-        }
-
-        async function verifyAdminPassword() {
-            var password = document.getElementById('adminPasswordInput').value;
-            var errorEl = document.getElementById('adminPasswordError');
+        async function verifyAdminPasswordDyn() {
+            var input = document.getElementById('adminPasswordInputDyn');
+            var errorEl = document.getElementById('adminPasswordErrorDyn');
+            var okBtn = document.getElementById('adminVerifyBtnDyn');
+            if (!input) return;
+            var password = input.value;
             errorEl.style.display = 'none';
             if (!password) {
                 errorEl.textContent = '请输入密码';
                 errorEl.style.display = 'block';
                 return;
             }
-            // Verify the admin password "ManJuanAll"
-            if (password === 'ManJuanAll') {
-                document.getElementById('adminPasswordModal').classList.add('hidden');
-                // Close the banner
-                var modal = document.getElementById('authBannerModal');
-                modal.classList.add('hidden');
-                delete modal.dataset.lockOverlay;
-                delete modal.dataset.bannerEnabled;
-                window._bannerManuallyDismissed = true;
-                // Auto-fill the admin username and focus on password
-                document.getElementById('loginUsername').value = 'ManJuanAll';
-                document.getElementById('loginPassword').focus();
-                showSnackbar('管理员验证成功，请输入密码登录');
-            } else {
-                errorEl.textContent = '密码错误';
-                errorEl.style.display = 'block';
+
+            // v040: Disable button and show loading state
+            if (okBtn) {
+                okBtn.textContent = '验证中...';
+                okBtn.disabled = true;
+                okBtn.style.opacity = '0.6';
             }
+
+            try {
+                // v040: Verify password against database using multiple RPC methods
+                var passwordHash = await hashPassword(password);
+                var verified = false;
+                var lastError = null;
+
+                // Method 1: Try secure rate-limited login
+                if (!verified) {
+                    try {
+                        const { data, error } = await sb.rpc('verify_login_secure_rate_limited', {
+                            p_username: 'ManJuanAll',
+                            p_password_hash: passwordHash
+                        });
+                        console.log('[AdminVerify] Method 1 (secure_rate_limited):', { data: data, error: error });
+                        if (!error && data && data.success !== false) {
+                            verified = true;
+                        } else {
+                            lastError = error || (data && data.message) || 'method1 failed';
+                        }
+                    } catch (e) {
+                        console.warn('[AdminVerify] Method 1 exception:', e);
+                        lastError = e;
+                    }
+                }
+
+                // Method 2: Try secure login (without rate limiting)
+                if (!verified) {
+                    try {
+                        const { data, error } = await sb.rpc('verify_login_secure', {
+                            p_username: 'ManJuanAll',
+                            p_password_hash: passwordHash
+                        });
+                        console.log('[AdminVerify] Method 2 (secure):', { data: data, error: error });
+                        if (!error && data && data.success !== false) {
+                            verified = true;
+                        } else {
+                            lastError = error || (data && data.message) || 'method2 failed';
+                        }
+                    } catch (e) {
+                        console.warn('[AdminVerify] Method 2 exception:', e);
+                        lastError = e;
+                    }
+                }
+
+                // Method 3: Try legacy login
+                if (!verified) {
+                    try {
+                        const { data, error } = await sb.rpc('verify_login', {
+                            p_username: 'ManJuanAll',
+                            p_password_hash: passwordHash
+                        });
+                        console.log('[AdminVerify] Method 3 (legacy):', { data: data, error: error });
+                        if (!error && data && data.success !== false) {
+                            verified = true;
+                        } else {
+                            lastError = error || (data && data.message) || 'method3 failed';
+                        }
+                    } catch (e) {
+                        console.warn('[AdminVerify] Method 3 exception:', e);
+                        lastError = e;
+                    }
+                }
+
+                // Method 4: Direct query fallback - check password hash directly
+                if (!verified) {
+                    try {
+                        const { data: profile, error: profileError } = await sb.rpc('get_user_profile', {
+                            p_username: 'ManJuanAll'
+                        });
+                        console.log('[AdminVerify] Method 4 (profile check):', { data: profile, error: profileError });
+                        if (!profileError && profile && profile.success !== false) {
+                            // Check if the user exists and is an admin
+                            if (profile.role === 'admin' || profile.username === 'ManJuanAll') {
+                                // We can't verify the password directly, but at least the account exists
+                                // Try to verify with session token approach
+                                const { data: verifyData, error: verifyError } = await sb.rpc('verify_login_secure', {
+                                    p_username: 'ManJuanAll',
+                                    p_password_hash: passwordHash
+                                });
+                                if (!verifyError && verifyData && verifyData.success !== false) {
+                                    verified = true;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[AdminVerify] Method 4 exception:', e);
+                    }
+                }
+
+                console.log('[AdminVerify] Final result:', { verified: verified, lastError: lastError });
+
+                if (verified) {
+                    var overlay = document.getElementById('dynAdminPasswordOverlay');
+                    if (overlay) overlay.remove();
+                    // Close the banner
+                    hideAuthBannerDynamic();
+                    var modal = document.getElementById('authBannerModal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        delete modal.dataset.lockOverlay;
+                        delete modal.dataset.bannerEnabled;
+                    }
+                    // Also hide old static admin modal if visible
+                    var oldModal = document.getElementById('adminPasswordModal');
+                    if (oldModal) oldModal.classList.add('hidden');
+                    window._bannerManuallyDismissed = true;
+                    // Auto-fill the admin username and focus on password
+                    document.getElementById('loginUsername').value = 'ManJuanAll';
+                    document.getElementById('loginPassword').value = password;
+                    document.getElementById('loginPassword').focus();
+                    showSnackbar('管理员验证成功，请点击登录');
+                } else {
+                    // v040: Show more specific error message
+                    var errMsg = '密码错误';
+                    if (lastError && typeof lastError === 'string') {
+                        if (lastError.includes('rate') || lastError.includes('频繁')) {
+                            errMsg = '验证过于频繁，请稍后再试';
+                        } else if (lastError.includes('Could not find') || lastError.includes('schema cache')) {
+                            errMsg = '验证服务暂不可用，请稍后重试';
+                        }
+                    } else if (lastError && lastError.message) {
+                        if (lastError.message.includes('rate') || lastError.message.includes('频繁')) {
+                            errMsg = '验证过于频繁，请稍后再试';
+                        }
+                    }
+                    errorEl.textContent = errMsg;
+                    errorEl.style.display = 'block';
+                    if (okBtn) {
+                        okBtn.textContent = '验证';
+                        okBtn.disabled = false;
+                        okBtn.style.opacity = '1';
+                    }
+                }
+            } catch (e) {
+                console.error('[AdminVerify] Error:', e);
+                errorEl.textContent = '验证失败，请检查网络';
+                errorEl.style.display = 'block';
+                if (okBtn) {
+                    okBtn.textContent = '验证';
+                    okBtn.disabled = false;
+                    okBtn.style.opacity = '1';
+                }
+            }
+        }
+
+        function cancelAdminPassword() {
+            // v040: Admin password modal cannot be cancelled - must verify
+            // This function is kept for backward compatibility but does nothing
+            return;
+        }
+
+        async function verifyAdminPassword() {
+            // v039: Redirect to dynamic version
+            verifyAdminPasswordDyn();
         }
 
         // Start cloud control monitoring
         function initCloudControl() {
-            // Check immediately
-            checkCloudControl();
-            // Check every 30 seconds
+            // v038: Initial check with more aggressive retry logic
+            // Retry up to 8 times with 2s delay for early failures
+            var _ccRetryCount = 0;
+            var _ccMaxRetries = 8;
+
+            function initialCheck() {
+                console.log('[CC] Initial check attempt ' + (_ccRetryCount + 1) + '/' + _ccMaxRetries);
+                checkCloudControl().then(function(success) {
+                    console.log('[CC] Check result:', success);
+                    if (!success && _ccRetryCount < _ccMaxRetries && !isEntered) {
+                        _ccRetryCount++;
+                        setTimeout(initialCheck, 2000);
+                    }
+                });
+            }
+
+            initialCheck();
+
+            // Regular interval check every 30 seconds
             if (_cloudControlInterval) clearInterval(_cloudControlInterval);
             _cloudControlInterval = setInterval(checkCloudControl, 30000);
         }
@@ -8144,6 +8868,10 @@
 
         function logout() {
             if (privatePollTimer) { clearInterval(privatePollTimer); privatePollTimer = null; }
+            // v040: Clean up public chat polling timers
+            if (_publicPollTimer) { clearInterval(_publicPollTimer); _publicPollTimer = null; }
+            if (_publicBackupPollTimer) { clearInterval(_publicBackupPollTimer); _publicBackupPollTimer = null; }
+            _publicRetryCount = 0;
             if (globalPrivateChannel) { sb.removeChannel(globalPrivateChannel); globalPrivateChannel = null; }
             if (publicChannel) { publicChannel.untrack();
                 sb.removeChannel(publicChannel);
@@ -8174,7 +8902,14 @@
             document.getElementById('loginUsername').value = '';
             document.getElementById('loginPassword').value = '';
             hideGlobalLoading();
+            // v038: Clear any existing dynamic banner on logout
+            hideAuthBannerDynamic();
+            // v038: Reset banner dismissal so it can show again after logout
+            try { sessionStorage.removeItem('mjchat_banner_dismissed'); } catch (e) {}
+            window._bannerManuallyDismissed = false;
             showLogin();
+            // v038: Re-check cloud control after logout
+            initCloudControl();
         }
 
         async function deleteAccount() {
@@ -8631,9 +9366,27 @@
         }
 
         function init() {
-            sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            // v037: Safety timeout - if loading is still visible after 15s, force-show login
+            var _safetyTimeout = setTimeout(function() {
+                var loadingEl = document.getElementById('globalLoading');
+                if (loadingEl && !loadingEl.classList.contains('hidden')) {
+                    console.warn('Safety timeout: forcing login page');
+                    hideGlobalLoading();
+                    if (!isEntered) showLogin();
+                }
+            }, 15000);
+
+            // v037: Initialize Supabase client with error handling
+            try {
+                if (typeof window.supabase !== 'undefined' && window.supabase && window.supabase.createClient) {
+                    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    console.error('Supabase library not loaded');
+                }
+            } catch (e) {
+                console.error('Supabase init error:', e);
+            }
             clientId = generateId();
-            showGlobalLoading('登录中…', '正在验证身份');
 
             try {
                 history.pushState({ page: 'home', mjchat_nav: true, initial: true }, '', '#home');
@@ -8648,80 +9401,119 @@
                 }
             });
 
-            // 启动云控监控 (检查公告 + 强制下线)
-            initCloudControl();
+            // v037: Fixed init flow - loading is hidden by default in HTML
+            // Only show it for returning users who need session verification
+            var savedSession = null;
+            try {
+                savedSession = localStorage.getItem('mjchat_session');
+            } catch (e) { /* ignore */ }
 
-            restoreSession();
-        }
-
-        function restoreSession() {
-            const saved = localStorage.getItem('mjchat_session');
-            if (saved) {
-                try {
-                    const session = JSON.parse(saved);
-                    if (!session.username || !session.token) {
-                        localStorage.removeItem('mjchat_session');
-                        hideGlobalLoading();
-                        showLogin();
-                        return;
-                    }
-                    const verifyWithSecure = async () => {
-                        const { data, error } = await sb.rpc('verify_session_secure', {
-                            p_username: session.username, p_token: session.token
-                        });
-                        if (!error && data && data.success !== false) return data;
-                        return null;
-                    };
-                    const verifyWithLegacy = async () => {
-                        const { data, error } = await sb.rpc('verify_session', {
-                            p_username: session.username, p_token: session.token
-                        });
-                        if (!error && data && data.success !== false) return data;
-                        throw error || new Error('Session verify failed');
-                    };
-
-                    (async () => {
-                        let userData = null;
-                        try { userData = await verifyWithSecure(); } catch (e) { /* ignore */ }
-                        if (!userData) {
-                            try { userData = await verifyWithLegacy(); } catch (e) {
-                                localStorage.removeItem('mjchat_session');
-                                hideGlobalLoading();
-                                showLogin();
-                                return;
-                            }
-                        }
-                        if (isEntered) return;
-                        if (userData.banned) {
-                            localStorage.removeItem('mjchat_session');
-                            hideGlobalLoading();
-                            showLogin();
-                            showEl('loginError', '您已被封禁');
-                            return;
-                        }
-                        currentUser = session.username;
-                        isAdmin = (userData.role === 'admin');
-                        currentAvatarUrl = userData.avatar_url || '';
-                        userAvatarCache[currentUser] = currentAvatarUrl;
-                        updateLoadingText('登录中…', '欢迎回来 ' + currentUser);
-                        authorizeEnterApp();
-                        enterApp();
-                        if (userData.needs_relogin) {
-                            setTimeout(() => {
-                                showSnackbar('安全提示：请退出后重新登录以更新安全凭证');
-                            }, 2000);
-                        }
-                    })().catch(() => {
-                        localStorage.removeItem('mjchat_session');
-                        hideGlobalLoading();
-                        showLogin();
-                    });
-                } catch (e) {
-                    localStorage.removeItem('mjchat_session');
+            if (savedSession) {
+                // Has a saved session - show loading and verify
+                showGlobalLoading('登录中…', '正在验证身份');
+                // Add a timeout fallback - if verification takes too long, show login
+                var _sessionTimeout = setTimeout(function() {
+                    var loadingEl = document.getElementById('globalLoading');
+                    if (loadingEl && loadingEl.classList.contains('hidden')) return;
+                    console.warn('Session verification timeout, showing login');
+                    try { localStorage.removeItem('mjchat_session'); } catch (e) {}
                     hideGlobalLoading();
                     showLogin();
-                }
+                }, 10000);
+
+                restoreSession(_sessionTimeout);
             } else {
+                // No saved session - loading is already hidden, just show login
+                showLogin();
+            }
+
+            // v038: Start cloud control check immediately after login page is shown
+            // No delay needed - dynamic banner is body-level, not affected by .app
+            initCloudControl();
+        }
+
+        function restoreSession(timeoutId) {
+            const saved = localStorage.getItem('mjchat_session');
+            if (!saved) {
+                if (timeoutId) clearTimeout(timeoutId);
+                hideGlobalLoading();
+                showLogin();
+                return;
+            }
+            // v037: Check if Supabase client is available before verifying
+            if (!sb) {
+                if (timeoutId) clearTimeout(timeoutId);
+                hideGlobalLoading();
+                showLogin();
+                showEl('loginError', '连接服务失败，请刷新页面重试');
+                return;
+            }
+            try {
+                const session = JSON.parse(saved);
+                if (!session.username || !session.token) {
+                    localStorage.removeItem('mjchat_session');
+                    if (timeoutId) clearTimeout(timeoutId);
+                    hideGlobalLoading();
+                    showLogin();
+                    return;
+                }
+                const verifyWithSecure = async () => {
+                    const { data, error } = await sb.rpc('verify_session_secure', {
+                        p_username: session.username, p_token: session.token
+                    });
+                    if (!error && data && data.success !== false) return data;
+                    return null;
+                };
+                const verifyWithLegacy = async () => {
+                    const { data, error } = await sb.rpc('verify_session', {
+                        p_username: session.username, p_token: session.token
+                    });
+                    if (!error && data && data.success !== false) return data;
+                    throw error || new Error('Session verify failed');
+                };
+
+                (async () => {
+                    let userData = null;
+                    try { userData = await verifyWithSecure(); } catch (e) { /* ignore */ }
+                    if (!userData) {
+                        try { userData = await verifyWithLegacy(); } catch (e) {
+                            localStorage.removeItem('mjchat_session');
+                            if (timeoutId) clearTimeout(timeoutId);
+                            hideGlobalLoading();
+                            showLogin();
+                            return;
+                        }
+                    }
+                    if (timeoutId) clearTimeout(timeoutId);
+                    if (isEntered) return;
+                    if (userData.banned) {
+                        localStorage.removeItem('mjchat_session');
+                        hideGlobalLoading();
+                        showLogin();
+                        showEl('loginError', '您已被封禁');
+                        return;
+                    }
+                    currentUser = session.username;
+                    isAdmin = (userData.role === 'admin');
+                    currentAvatarUrl = userData.avatar_url || '';
+                    userAvatarCache[currentUser] = currentAvatarUrl;
+                    updateLoadingText('登录中…', '欢迎回来 ' + currentUser);
+                    authorizeEnterApp();
+                    enterApp();
+                    if (userData.needs_relogin) {
+                        setTimeout(() => {
+                            showSnackbar('安全提示：请退出后重新登录以更新安全凭证');
+                        }, 2000);
+                    }
+                })().catch(() => {
+                    localStorage.removeItem('mjchat_session');
+                    if (timeoutId) clearTimeout(timeoutId);
+                    hideGlobalLoading();
+                    showLogin();
+                });
+            } catch (e) {
+                localStorage.removeItem('mjchat_session');
+                if (timeoutId) clearTimeout(timeoutId);
                 hideGlobalLoading();
                 showLogin();
             }
@@ -8735,7 +9527,38 @@
             });
         });
 
-        window.addEventListener('DOMContentLoaded', init);
+        // v037: Global error handler - only act during initial loading phase
+        // This prevents non-critical runtime errors from disrupting the app
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error || e.message);
+            try {
+                // Only hide loading and show login if we're still on the auth/loading screen
+                var loadingEl = document.getElementById('globalLoading');
+                if (loadingEl && !loadingEl.classList.contains('hidden') && !isEntered) {
+                    hideGlobalLoading();
+                    showLogin();
+                }
+            } catch (err) { /* ignore */ }
+        });
+
+        // v037: Unhandled promise rejection handler - only act during loading phase
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+            try {
+                var loadingEl = document.getElementById('globalLoading');
+                if (loadingEl && !loadingEl.classList.contains('hidden') && !isEntered) {
+                    hideGlobalLoading();
+                    showLogin();
+                }
+            } catch (err) { /* ignore */ }
+        });
+
+        // v037: Use readyState check to ensure init() always runs
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
