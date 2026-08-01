@@ -85,94 +85,101 @@
         })();
     </script>
     <script>
-        /* === Anti-Debugging & Security Measures (v031) === */
+        /* === Anti-Debugging & Security Measures (v036 - Reduced False Positives) === */
+        window._devtoolsDetected = false;
+        window._bannerManuallyDismissed = false;
         (function() {
-            // 1. Disable sensitive keyboard shortcuts
+            // 1. Disable sensitive keyboard shortcuts (kept - no false positives)
             document.addEventListener('keydown', function(e) {
-                // F12
                 if (e.keyCode === 123) { e.preventDefault(); e.stopPropagation(); return false; }
-                // Ctrl+Shift+I (Developer Tools)
                 if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 105)) { e.preventDefault(); e.stopPropagation(); return false; }
-                // Ctrl+Shift+J (Console)
                 if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.keyCode === 106)) { e.preventDefault(); e.stopPropagation(); return false; }
-                // Ctrl+U (View Source)
                 if (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 117)) { e.preventDefault(); e.stopPropagation(); return false; }
-                // Ctrl+Shift+C (Inspector)
                 if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.keyCode === 99)) { e.preventDefault(); e.stopPropagation(); return false; }
-                // Ctrl+S (Save Page)
                 if (e.ctrlKey && (e.keyCode === 83 || e.keyCode === 115)) { e.preventDefault(); e.stopPropagation(); return false; }
             }, true);
 
-            // 2. Disable right-click context menu
+            // 2. Disable right-click context menu (kept)
             document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, true);
 
             // 3. Detect developer tools via debugger statement + timing
-            var devtoolsOpen = false;
-            var threshold = 200; // ms threshold
+            // v036: Increased threshold from 200ms to 1000ms to reduce false positives
+            // v036: Require 3 consecutive detections before triggering
+            // v036: Removed checkWindowSize entirely (was main cause of false positives)
+            var _detectCount = 0;
+            var _threshold = 1000; // ms - much higher to avoid slow devices triggering
+            var _requiredConsecutive = 3; // need 3 consecutive detections
 
             function checkDevTools() {
                 var startTime = performance.now();
-                // debugger statement pauses execution if devtools is open
-                // Using Function constructor to avoid static analysis
                 (function() {
                     var f = new Function('debugger');
                     try { f(); } catch(e) {}
                 })();
                 var endTime = performance.now();
-                if (endTime - startTime > threshold) {
-                    devtoolsOpen = true;
-                    onDevToolsDetected();
-                }
-            }
-
-            // 4. Detect via window size difference (outer vs inner)
-            function checkWindowSize() {
-                var widthDiff = window.outerWidth - window.innerWidth;
-                var heightDiff = window.outerHeight - window.innerHeight;
-                // Typical browser chrome is ~80-100px height, devtools adds more
-                if (heightDiff > 200 || widthDiff > 200) {
-                    if (!devtoolsOpen) {
-                        devtoolsOpen = true;
+                if (endTime - startTime > _threshold) {
+                    _detectCount++;
+                    if (_detectCount >= _requiredConsecutive) {
                         onDevToolsDetected();
                     }
+                } else {
+                    // Reset counter if devtools appears to be closed
+                    _detectCount = 0;
                 }
             }
 
-            // 5. Anti-reverse: continuous detection with setInterval
+            // 4. Continuous detection - v036: increased interval from 1500ms to 4000ms
             var detectionInterval = setInterval(function() {
                 checkDevTools();
-                checkWindowSize();
-            }, 1500);
+            }, 4000);
 
-            // 6. When devtools detected: clear page and block
-            var blocked = false;
+            // 5. When devtools detected: re-show banner instead of redirecting
             function onDevToolsDetected() {
-                if (blocked) return;
-                blocked = true;
-                try {
-                    // Clear all sensitive data from memory
-                    // Remove DOM content
-                    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#121212;color:#fff;font-family:sans-serif;font-size:1.2rem;text-align:center;padding:2rem;"><div><p>访问已受限</p><p style="font-size:0.8rem;margin-top:1rem;opacity:0.6;">请关闭开发者工具后刷新页面</p></div></div>';
-                    // Stop all intervals/timeouts
-                    for (var i = 1; i < 99999; i++) { clearInterval(i); clearTimeout(i); }
-                    // Redirect after brief delay
-                    setTimeout(function() { window.location.href = 'about:blank'; }, 100);
-                } catch(e) {
-                    window.location.href = 'about:blank';
+                if (window._devtoolsDetected) return;
+                window._devtoolsDetected = true;
+
+                // If banner was manually dismissed by button click, don't re-show
+                if (window._bannerManuallyDismissed) {
+                    window._devtoolsDetected = false;
+                    return;
                 }
+
+                // Check if the auth banner modal still exists in DOM
+                var modal = document.getElementById('authBannerModal');
+                if (modal) {
+                    // Modal still exists - just show it if hidden
+                    if (modal.classList.contains('hidden') && modal.dataset.bannerEnabled === 'true') {
+                        modal.classList.remove('hidden');
+                    }
+                } else {
+                    // Modal was removed from DOM by user via devtools
+                    // Recreate a blocking overlay
+                    var overlay = document.createElement('div');
+                    overlay.id = 'devtoolsBlockOverlay';
+                    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.95);z-index:99999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:sans-serif;text-align:center;padding:2rem;';
+                    overlay.innerHTML = '<div><p style="font-size:1.2rem;font-weight:bold;">检测到开发者工具</p><p style="font-size:0.875rem;margin-top:0.5rem;opacity:0.7;">请关闭开发者工具后刷新页面</p></div>';
+                    document.body.appendChild(overlay);
+                }
+
+                // Reset detection after 8 seconds to allow re-detection
+                setTimeout(function() {
+                    window._devtoolsDetected = false;
+                    var ov = document.getElementById('devtoolsBlockOverlay');
+                    if (ov && window._bannerManuallyDismissed) {
+                        ov.remove();
+                    }
+                }, 8000);
             }
 
-            // 7. Console warning for attackers
+            // 6. Console warning (kept)
             try {
                 console.clear();
                 console.log('%c警告', 'color:red;font-size:48px;font-weight:bold;');
                 console.log('%c此区域包含敏感信息，请勿在此执行任何代码。', 'color:red;font-size:16px;');
             } catch(e) {}
 
-            // 8. Override console methods to prevent data exfiltration
-            var _origLog = console.log;
+            // 7. Override console methods (kept)
             var _origWarn = console.warn;
-            var _origErr = console.error;
             console.table = function() { _origWarn.apply(console, ['[Blocked: console.table]']); };
             console.dir = function() { _origWarn.apply(console, ['[Blocked: console.dir]']); };
             console.group = function() { _origWarn.apply(console, ['[Blocked: console.group]']); };
@@ -3015,9 +3022,9 @@
 
                 <div style="margin-bottom:20px;">
                     <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">强制下线</h3>
-                    <button class="md-button primary" onclick="forceLogoutAllUsers()" style="width:100%;background:var(--md-error);color:#fff;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;margin-bottom:8px;">一键下线所有人（除自己）</button>
+                    <button class="md-button primary" onclick="forceLogoutAllUsers()" style="width:100%;background:var(--md-error);color:#fff;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;margin-bottom:8px;">一键下线所有在线用户（除自己）</button>
                     <button class="md-button primary" onclick="resetForceLogout()" style="width:100%;background:var(--md-surface-4dp);color:var(--md-on-surface);padding:10px;border:none;border-radius:8px;font-size:0.8125rem;cursor:pointer;margin-bottom:8px;border:1px solid var(--md-outline);">解除强制下线（允许用户重新登录）</button>
-                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">一键下线后，用户需重新登录。点击「解除」后用户才能正常登录。</p>
+                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">一键下线后，仅当前在线用户会被踢出。离线用户不受影响。点击「解除」后恢复默认状态。</p>
                 </div>
 
                 <div style="margin-bottom:20px;">
@@ -3034,18 +3041,47 @@
                     </label>
                 </div>
 
+                <div style="margin-bottom:20px;">
+                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">禁止登录</h3>
+                    <label style="display:flex;align-items:center;margin-bottom:8px;cursor:pointer;">
+                        <input type="checkbox" id="ccLoginBlocked" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-error);">
+                        <span style="font-size:0.875rem;">禁止非管理员登录（配合公告使用效果更佳）</span>
+                    </label>
+                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">开启后，后端将拒绝所有非管理员的登录请求。管理员仍可正常登录。可通过10次点击公告模态框输入密码进入管理员登录。</p>
+                </div>
+
                 <button class="md-button primary" onclick="saveCloudControl()" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;background:var(--md-primary);color:#fff;margin-bottom:8px;">保存设置</button>
                 <p id="cloudControlStatus" style="font-size:0.75rem;color:var(--md-on-surface-dim);text-align:center;"></p>
             </div>
         </div>
 
-        <!-- 登录/注册页公告模态框 -->
-        <div class="dialog-overlay hidden" id="authBannerModal" style="z-index:9999;">
-            <div class="md-dialog" style="max-width:400px;width:90vw;">
-                <h2 id="authBannerTitle" style="margin-bottom:12px;font-size:1.1rem;">公告</h2>
-                <p id="authBannerText" style="margin-bottom:20px;font-size:0.875rem;line-height:1.5;white-space:pre-wrap;">公告内容</p>
+        <!-- 登录/注册页公告模态框 (v036: 支持10次点击管理员入口) -->
+        <div class="dialog-overlay hidden" id="authBannerModal" style="z-index:9999;" data-banner-enabled="false">
+            <div class="md-dialog" id="authBannerDialogContent" style="max-width:400px;width:90vw;position:relative;">
+                <!-- 10次点击的隐藏触发区域（整个模态框内容） -->
+                <h2 id="authBannerTitle" style="margin-bottom:12px;font-size:1.1rem;cursor:default;user-select:none;" onclick="handleBannerClick()">公告</h2>
+                <p id="authBannerText" style="margin-bottom:20px;font-size:0.875rem;line-height:1.5;white-space:pre-wrap;cursor:default;user-select:none;" onclick="handleBannerClick()">公告内容</p>
                 <div class="dialog-actions" id="authBannerActions">
                     <button class="md-button text" onclick="dismissAuthBanner()" style="color:var(--md-primary);">我知道了</button>
+                </div>
+                <!-- 10次点击进度指示器（隐藏） -->
+                <div id="bannerClickHint" style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:transparent;transition:background 0.3s;"></div>
+            </div>
+        </div>
+
+        <!-- 管理员密码验证模态框 (v036: 10次点击后弹出) -->
+        <div class="dialog-overlay hidden" id="adminPasswordModal" style="z-index:10000;">
+            <div class="md-dialog" style="max-width:350px;width:90vw;">
+                <h2 style="margin-bottom:12px;font-size:1.1rem;">管理员验证</h2>
+                <p style="margin-bottom:16px;font-size:0.8rem;color:var(--md-on-surface-dim);">请输入管理员密码以关闭公告并登录</p>
+                <div class="md-text-field" style="width:100%;margin-bottom:16px;">
+                    <input type="password" id="adminPasswordInput" placeholder=" " style="width:100%;" onkeypress="if(event.key==='Enter')verifyAdminPassword()">
+                    <label>管理员密码</label>
+                </div>
+                <div id="adminPasswordError" style="color:var(--md-error);font-size:0.75rem;margin-bottom:8px;display:none;"></div>
+                <div class="dialog-actions">
+                    <button class="md-button text" onclick="cancelAdminPassword()" style="color:var(--md-on-surface-dim);">取消</button>
+                    <button class="md-button text" onclick="verifyAdminPassword()" style="color:var(--md-primary);">验证并登录</button>
                 </div>
             </div>
         </div>
@@ -3137,7 +3173,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 34;
+        const APP_VERSION = 36;
         const SALT = 'mjchat_2026_salt_v1';
         const FORBIDDEN_WORDS = ['漫卷', 'MJ', 'system', 'System', 'SYSTEM', '管理员', '系统'];
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -3692,11 +3728,7 @@
 
         async function recordLogin(username, ip) {
             try {
-                await sb.from(TABLE_LOGIN_HISTORY).insert({
-                    username: username,
-                    login_time: new Date().toISOString(),
-                    ip_address: ip || 'unknown'
-                });
+                await sb.rpc('record_login', { p_username: username, p_ip: ip || 'unknown' });
             } catch (e) { /* ignore */ }
         }
 
@@ -3750,14 +3782,9 @@
             try {
                 let usernameExists = false;
                 try {
-                    const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: username });
-                    if (rpcData && rpcData.success !== false) usernameExists = true;
-                } catch (e) { /* RPC not found, fallback */ }
-                if (!usernameExists) {
-                    const { data: existing } = await sb.from(TABLE_USERS).select('username').eq('username', username)
-                        .maybeSingle();
-                    if (existing) usernameExists = true;
-                }
+                    const { data: rpcData } = await sb.rpc('check_username_exists', { p_username: username });
+                    if (rpcData && rpcData.exists) usernameExists = true;
+                } catch (e) { /* ignore */ }
                 if (usernameExists) return showEl('regError', '该用户名已被使用');
 
                 const passwordHash = await hashPassword(password);
@@ -3858,6 +3885,10 @@
                 }
                 if (!userData || userData.success === false) {
                     hideGlobalLoading();
+                    // Check if login is blocked by cloud control
+                    if (userData && userData.login_blocked) {
+                        return showEl('loginError', '系统维护中，暂无法登录');
+                    }
                     return showEl('loginError', (userData && userData.message) || '用户名或密码错误');
                 }
                 if (userData.banned) {
@@ -3960,13 +3991,12 @@
             const unique = [...new Set(usernames.filter(n => n && !userAvatarCache.hasOwnProperty(n)))];
             if (unique.length === 0) return;
             try {
-                const { data, error } = await sb.from(TABLE_USERS)
-                    .select('username, avatar_url')
-                    .in('username', unique);
-                if (!error && data) {
-                    data.forEach(u => { userAvatarCache[u.username] = u.avatar_url || ''; });
+                const { data, error } = await sb.rpc('get_user_avatars_batch', { p_usernames: unique });
+                if (!error && data && data.success !== false && data.avatars) {
+                    data.avatars.forEach(u => { userAvatarCache[u.username] = u.avatar_url || ''; });
                     unique.forEach(n => { if (!userAvatarCache.hasOwnProperty(n)) userAvatarCache[n] = ''; });
-                } else if (error) {
+                } else {
+                    // Fallback: get each user's profile via RPC
                     for (const name of unique) {
                         try {
                             const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: name });
@@ -4148,14 +4178,8 @@
                 if (now - recentSystemMsgs[k] > 10000) delete recentSystemMsgs[k];
             });
             try {
-                const tenSecondsAgo = new Date(now - 10000).toISOString();
-                const { data } = await sb.from(TABLE_PUBLIC_MSG)
-                    .select('id')
-                    .eq('sender', 'system')
-                    .eq('text', text)
-                    .gte('created_at', tenSecondsAgo)
-                    .limit(1);
-                if (data && data.length > 0) return;
+                const { data: chkData } = await sb.rpc('check_system_msg_exists', { p_text: text, p_seconds_ago: 10 });
+                if (chkData && chkData.exists) return;
             } catch (e) { /* query failed, continue */ }
             sendSystemMessageSecure(text).then(r => {
                 if (r && r.success !== false) updatePublicEntry();
@@ -4294,45 +4318,18 @@
 
         async function loadPublicHistory() {
             try {
-                let result = await sb.from(TABLE_PUBLIC_MSG).select(
-                        'id, sender, text, image_url, audio_url, audio_dur, msg_version, created_at, reply_to_id, reply_content, sender_deleted, is_system'
-                        )
-                    .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                if (result.error && result.error.message && result.error.message.includes('reply_to_id')) {
-                    result = await sb.from(TABLE_PUBLIC_MSG).select(
-                            'id, sender, text, image_url, audio_url, audio_dur, msg_version, created_at, sender_deleted, is_system'
-                            )
-                        .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                }
-                if (result.error && result.error.message && result.error.message.includes('sender_deleted')) {
-                    result = await sb.from(TABLE_PUBLIC_MSG).select(
-                            'id, sender, text, image_url, audio_url, audio_dur, msg_version, created_at, is_system')
-                        .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                }
-                if (result.error && result.error.message && result.error.message.includes('msg_version')) {
-                    result = await sb.from(TABLE_PUBLIC_MSG).select(
-                            'id, sender, text, image_url, audio_url, audio_dur, created_at, sender_deleted, is_system')
-                        .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                }
-                if (result.error && result.error.message && result.error.message.includes('audio_url')) {
-                    result = await sb.from(TABLE_PUBLIC_MSG).select(
-                            'id, sender, text, image_url, msg_version, created_at, sender_deleted, is_system')
-                        .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                }
-                if (result.error && result.error.message && result.error.message.includes('image_url')) {
-                    result = await sb.from(TABLE_PUBLIC_MSG).select(
-                            'id, sender, text, created_at, sender_deleted, is_system')
-                        .order('created_at', { ascending: false }).limit(HISTORY_LIMIT);
-                }
-                const { data, error } = result;
+                const { data: rpcData, error: rpcError } = await sb.rpc('get_public_messages', {
+                    p_limit: HISTORY_LIMIT
+                });
                 const el = document.querySelector('#publicMessages .system-msg');
                 if (el) el.remove();
-                if (error) {
-                    console.error('loadPublicHistory error:', error);
+                if (rpcError || !rpcData || rpcData.success === false) {
+                    console.error('loadPublicHistory error:', rpcError);
                     addPublicSystemMsg('无法加载历史消息');
                     return;
                 }
-                if (!data || data.length === 0) {
+                const data = rpcData.messages || [];
+                if (data.length === 0) {
                     publicHasMore = false;
                     return;
                 }
@@ -4365,27 +4362,16 @@
             showPublicLoadMore(true);
             try {
                 const oldest = publicMessages[0].created_at;
-                let result = await sb.from(TABLE_PUBLIC_MSG).select(
-                        'id, sender, text, image_url, audio_url, audio_dur, msg_version, created_at, reply_to_id, reply_content, sender_deleted, is_system'
-                    )
-                    .lt('created_at', oldest)
-                    .order('created_at', { ascending: false }).limit(PAGE_SIZE);
-                if (result.error && result.error.message) {
-                    for (const retryCols of [
-                        'id, sender, text, image_url, audio_url, audio_dur, msg_version, created_at, sender_deleted, is_system',
-                        'id, sender, text, image_url, audio_url, audio_dur, created_at, sender_deleted, is_system',
-                        'id, sender, text, created_at, sender_deleted, is_system',
-                        'id, sender, text, created_at, is_system'
-                    ]) {
-                        if (!result.error.message.includes('reply_to_id')) break;
-                        result = await sb.from(TABLE_PUBLIC_MSG).select(retryCols)
-                            .lt('created_at', oldest)
-                            .order('created_at', { ascending: false }).limit(PAGE_SIZE);
-                        if (!result.error) break;
-                    }
+                const { data: rpcData, error: rpcError } = await sb.rpc('get_public_messages', {
+                    p_limit: PAGE_SIZE,
+                    p_before: oldest
+                });
+                if (rpcError || !rpcData || rpcData.success === false) {
+                    publicHasMore = false;
+                    return;
                 }
-                const { data, error } = result;
-                if (error || !data || data.length === 0) {
+                const data = rpcData.messages || [];
+                if (data.length === 0) {
                     publicHasMore = false;
                     return;
                 }
@@ -4396,7 +4382,7 @@
                     image_url: msg.image_url || null, audio_url: msg.audio_url || null,
                     audio_dur: msg.audio_dur || 0, msg_version: msg.msg_version || null,
                     created_at: msg.created_at, reply_to_id: msg.reply_to_id || null,
-                    reply_content: msg.reply_content || null, sender_deleted: msg.sender_deleted || false,
+                    reply_content: msg.reply_to_text || null, sender_deleted: msg.sender_deleted || false,
                     is_system: msg.is_system || false
                 }));
                 const unique = newMsgs.filter(m => !publicMessages.some(e => e.id === m.id));
@@ -4919,10 +4905,10 @@
             // Agent account creation is handled by send_agent_message RPC
             // This function just ensures the avatar cache is populated
             try {
-                const { data } = await sb.from(TABLE_USERS)
-                    .select('username, avatar_url').eq('username', agentName).maybeSingle();
-                if (!data) return; // RPC will create the account
-                if (!userAvatarCache.hasOwnProperty(agentName)) {
+                const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: agentName });
+                if (rpcData && rpcData.success !== false && rpcData.avatar_url) {
+                    userAvatarCache[agentName] = rpcData.avatar_url;
+                } else if (!userAvatarCache.hasOwnProperty(agentName)) {
                     userAvatarCache[agentName] = '';
                 }
             } catch (e) { /* ignore */ }
@@ -6064,17 +6050,10 @@
                     if (!rpcError && rpcData) {
                         sessions = Array.isArray(rpcData) ? rpcData : [];
                     }
-                } catch (e) { /* RPC not found, fallback */ }
+                } catch (e) { /* RPC error */ }
                 if (!sessions) {
-                    const { data, error } = await sb.from(TABLE_PRIVATE_SESSIONS)
-                        .select('id, user1, user2, updated_at, deleted_by_user1, deleted_by_user2, last_message')
-                        .or(`user1.eq.${currentUser},user2.eq.${currentUser}`)
-                        .order('updated_at', { ascending: false });
-                    if (error) {
-                        console.error('loadPrivateSessions error:', error);
-                        return;
-                    }
-                    sessions = data || [];
+                    console.error('loadPrivateSessions: RPC failed');
+                    return;
                 }
                 const filtered = sessions.filter(s => {
                     if (s.user1 === currentUser && s.deleted_by_user1) return false;
@@ -6180,29 +6159,21 @@
                     if (!rpcError && rpcData && rpcData.success !== false && rpcData.session_id) {
                         return rpcData.session_id;
                     }
-                } catch (e) { /* RPC not found, fallback */ }
+                } catch (e) { /* RPC error */ }
 
-                const { data: existing } = await sb.from(TABLE_PRIVATE_SESSIONS)
-                    .select('id, user1, user2, deleted_by_user1, deleted_by_user2')
-                    .or(`and(user1.eq.${currentUser},user2.eq.${otherUser}),and(user1.eq.${otherUser},user2.eq.${currentUser})`)
-                    .maybeSingle();
-                if (existing) {
-                    const updates = {};
-                    if (existing.user1 === currentUser && existing.deleted_by_user1) updates.deleted_by_user1 = false;
-                    if (existing.user2 === currentUser && existing.deleted_by_user2) updates.deleted_by_user2 = false;
-                    if (Object.keys(updates).length > 0) {
-                        await sb.from(TABLE_PRIVATE_SESSIONS).update(updates).eq('id', existing.id);
+                // Try the new get_private_session_for_users RPC
+                try {
+                    const { data: rpcData2, error: rpcError2 } = await sb.rpc('get_private_session_for_users', {
+                        p_current_user: currentUser,
+                        p_other_user: otherUser
+                    });
+                    if (!rpcError2 && rpcData2 && rpcData2.success !== false && rpcData2.session_id) {
+                        return rpcData2.session_id;
                     }
-                    return existing.id;
-                }
-                const { data, error } = await sb.from(TABLE_PRIVATE_SESSIONS).insert({
-                    user1: currentUser,
-                    user2: otherUser,
-                    deleted_by_user1: false,
-                    deleted_by_user2: false
-                }).select('id').single();
-                if (error) { showSnackbar('创建私聊失败: ' + error.message); return null; }
-                return data.id;
+                } catch (e) { /* RPC error */ }
+
+                showSnackbar('创建私聊失败: RPC不可用');
+                return null;
             } catch (e) { showSnackbar('创建私聊失败'); return null; }
         }
 
@@ -6540,10 +6511,12 @@
                         incrementUnread(sessionId);
                     }
                     if (msg.created_at) {
-                        sb.from(TABLE_PRIVATE_SESSIONS).update({
-                            updated_at: msg.created_at,
-                            last_message: msg.content
-                        }).eq('id', sessionId);
+                        try {
+                            await sb.rpc('update_private_session_read_rpc', {
+                                p_session_id: sessionId,
+                                p_username: currentUser
+                            });
+                        } catch (e) { /* ignore */ }
                     }
                     loadPrivateSessions();
                 }
@@ -7056,15 +7029,9 @@
                 try {
                     const { data: rpcData, error: rpcError } = await sb.rpc('search_users', { p_query: query.trim(), p_limit: 20 });
                     if (!rpcError && rpcData) { users = rpcData; }
-                } catch (e) { /* RPC not found, continue */ }
+                } catch (e) { /* RPC error */ }
                 if (!users) {
-                    const { data, error } = await sb.from(TABLE_USERS)
-                        .select('username, avatar_url')
-                        .ilike('username', `%${query.trim()}%`)
-                        .neq('username', currentUser)
-                        .limit(20);
-                    if (error) { container.innerHTML = '<div class="empty">搜索失败（数据库权限受限）</div>'; return; }
-                    users = data;
+                    container.innerHTML = '<div class="empty">搜索失败（RPC不可用）</div>'; return;
                 }
                 if (!users || users.length === 0) {
                     container.innerHTML = '<div class="empty">未找到用户</div>';
@@ -7211,22 +7178,7 @@
                     if (!rpcError && rpcData && rpcData.success !== false) {
                         profileData = rpcData;
                     }
-                } catch (e) { /* RPC not found, continue */ }
-
-                if (!profileData) {
-                    const { data, error } = await sb.from(TABLE_USERS).select('username, role, banned, avatar_url')
-                        .eq('username', username).maybeSingle();
-                    if (!error && data) {
-                        profileData = data;
-                    }
-                    if (error && error.message && (error.message.includes('role') || error.message.includes('banned'))) {
-                        const { data: data2 } = await sb.from(TABLE_USERS).select('username, avatar_url')
-                            .eq('username', username).maybeSingle();
-                        if (data2) {
-                            profileData = { username: data2.username, avatar_url: data2.avatar_url, role: 'user', banned: false };
-                        }
-                    }
-                }
+                } catch (e) { /* RPC error */ }
 
                 const isOnline = getOnlineStatus(username);
 
@@ -7359,16 +7311,10 @@
                 try {
                     const { data: rpcData, error: rpcError } = await sb.rpc('get_all_users');
                     if (!rpcError && rpcData) { users = rpcData; }
-                } catch (e) { /* RPC not found, continue */ }
+                } catch (e) { /* RPC error */ }
                 if (!users) {
-                    const { data, error } = await sb.from(TABLE_USERS)
-                        .select('username, avatar_url, role, banned')
-                        .order('username', { ascending: true });
-                    if (error) {
-                        document.getElementById('allUsersList').innerHTML = '<p>加载失败（数据库权限受限，请创建 get_all_users RPC 函数）</p>';
-                        return;
-                    }
-                    users = data;
+                    document.getElementById('allUsersList').innerHTML = '<p>加载失败（RPC不可用）</p>';
+                    return;
                 }
                 if (!users || users.length === 0) {
                     document.getElementById('allUsersList').innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无用户</p>';
@@ -7416,7 +7362,7 @@
                 try {
                     const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: currentUser });
                     if (rpcData && rpcData.success !== false) adminRole = rpcData;
-                } catch (e) { /* RPC not found */ }
+                } catch (e) { /* RPC error */ }
                 if (!adminRole || adminRole.role !== 'admin') {
                     showSnackbar('权限验证失败');
                     return;
@@ -7426,12 +7372,7 @@
                 try {
                     const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: username });
                     if (rpcData && rpcData.success !== false) userData = rpcData;
-                } catch (e) { /* RPC not found */ }
-                if (!userData) {
-                    const { data } = await sb.from(TABLE_USERS).select('role, avatar_url, banned').eq('username', username)
-                        .maybeSingle();
-                    userData = data;
-                }
+                } catch (e) { /* RPC error */ }
                 if (userData) {
                     isAdmin = (userData.role === 'admin');
                     currentAvatarUrl = userData.avatar_url || '';
@@ -7469,26 +7410,19 @@
         async function showStats() {
             document.getElementById('statsModal').classList.remove('hidden');
             try {
-                const { count: totalMsgs } = await sb.from(TABLE_PUBLIC_MSG).select('*', { count: 'exact', head: true });
-                let totalUsers = 0;
-                try {
-                    const { data: rpcData } = await sb.rpc('get_all_users');
-                    if (rpcData) totalUsers = rpcData.filter(u => !u.banned).length;
-                } catch (e) {
-                    const { count } = await sb.from(TABLE_USERS).select('*', { count: 'exact', head: true })
-                        .eq('banned', false);
-                    totalUsers = count || 0;
+                const { data: rpcData, error: rpcError } = await sb.rpc('get_stats');
+                if (rpcError || !rpcData || rpcData.success === false) {
+                    document.getElementById('statsContent').innerHTML = '<p>加载统计失败</p>';
+                    return;
                 }
+                const totalMsgs = rpcData.msg_count || 0;
+                const todayMsgs = rpcData.today_count || 0;
+                const totalUsers = rpcData.user_count || 0;
                 const currentOnline = Object.keys(onlineUsers).length;
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const { count: todayMsgs } = await sb.from(TABLE_PUBLIC_MSG)
-                    .select('*', { count: 'exact', head: true })
-                    .gte('created_at', today.toISOString());
 
                 const html = `
-                    <div><strong>群内消息总数：</strong>${totalMsgs || 0}</div>
-                    <div><strong>今日消息数：</strong>${todayMsgs || 0}</div>
+                    <div><strong>群内消息总数：</strong>${totalMsgs}</div>
+                    <div><strong>今日消息数：</strong>${todayMsgs}</div>
                     <div><strong>当前在线用户数：</strong>${currentOnline}</div>
                     <div><strong>历史最高在线用户数：</strong>${currentOnline}（需额外存储）</div>
                     <div><strong>今日最高在线用户数：</strong>${currentOnline}（需额外存储）</div>
@@ -7525,11 +7459,9 @@
                     if (!rpcError && rpcData) {
                         bannedUsers = rpcData.filter(u => u.banned);
                     }
-                } catch (e) { /* RPC not found */ }
+                } catch (e) { /* RPC error */ }
                 if (!bannedUsers) {
-                    const { data, error } = await sb.from(TABLE_USERS).select('username').eq('banned', true);
-                    if (error) { container.innerHTML = '<p>加载失败（数据库权限受限）</p>'; return; }
-                    bannedUsers = data;
+                    container.innerHTML = '<p>加载失败（RPC不可用）</p>'; return;
                 }
                 if (!bannedUsers || bannedUsers.length === 0) {
                     container.innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无封禁用户</p>';
@@ -7939,6 +7871,7 @@
                     document.getElementById('ccBannerTitle').value = data.banner_title || '';
                     document.getElementById('ccBannerMessage').value = data.banner_message || '';
                     document.getElementById('ccBannerShowClose').checked = data.banner_show_close;
+                    document.getElementById('ccLoginBlocked').checked = data.login_blocked || false;
                 }
             } catch (e) { /* ignore */ }
         }
@@ -7948,6 +7881,7 @@
             const title = document.getElementById('ccBannerTitle').value.trim();
             const message = document.getElementById('ccBannerMessage').value.trim();
             const showClose = document.getElementById('ccBannerShowClose').checked;
+            const loginBlocked = document.getElementById('ccLoginBlocked').checked;
             try {
                 const { data, error } = await sb.rpc('update_cloud_control', {
                     p_admin: currentUser,
@@ -7957,7 +7891,8 @@
                     p_banner_enabled: enabled,
                     p_banner_title: title,
                     p_banner_message: message,
-                    p_banner_show_close: showClose
+                    p_banner_show_close: showClose,
+                    p_login_blocked: loginBlocked
                 });
                 if (error || (data && data.success === false)) {
                     document.getElementById('cloudControlStatus').textContent = '保存失败: ' + (data?.message || error?.message || '');
@@ -7971,7 +7906,7 @@
         }
 
         async function forceLogoutAllUsers() {
-            if (!confirm('确定要强制下线所有用户吗？他们需要重新登录。')) return;
+            if (!confirm('确定要强制下线所有在线用户吗？他们需要重新登录。')) return;
             try {
                 const { data, error } = await sb.rpc('force_logout_all_users', {
                     p_admin: currentUser,
@@ -7981,7 +7916,31 @@
                     showSnackbar('操作失败: ' + (data?.message || error?.message || ''));
                     return;
                 }
-                showSnackbar(data.message || '已强制下线所有用户');
+                // Broadcast force_logout to all online users via Realtime
+                if (publicChannel) {
+                    // Get all online usernames from presence state
+                    var onlineNames = [];
+                    var vals = Object.values(onlineUsers);
+                    for (var vi = 0; vi < vals.length; vi++) {
+                        var flatVals = vals[vi];
+                        if (Array.isArray(flatVals)) {
+                            for (var vj = 0; vj < flatVals.length; vj++) {
+                                if (flatVals[vj] && flatVals[vj].name && flatVals[vj].name !== currentUser) {
+                                    onlineNames.push(flatVals[vj].name);
+                                }
+                            }
+                        }
+                    }
+                    // Send individual force_logout broadcasts
+                    for (var i = 0; i < onlineNames.length; i++) {
+                        publicChannel.send({
+                            type: 'broadcast',
+                            event: 'force_logout',
+                            payload: { username: onlineNames[i] }
+                        });
+                    }
+                }
+                showSnackbar(data.message || '已强制下线所有在线用户');
                 document.getElementById('cloudControlStatus').textContent = data.message;
             } catch (e) {
                 showSnackbar('操作失败');
@@ -7998,12 +7957,14 @@
                     p_banner_enabled: document.getElementById('ccBannerEnabled').checked,
                     p_banner_title: document.getElementById('ccBannerTitle').value.trim(),
                     p_banner_message: document.getElementById('ccBannerMessage').value.trim(),
-                    p_banner_show_close: document.getElementById('ccBannerShowClose').checked
+                    p_banner_show_close: document.getElementById('ccBannerShowClose').checked,
+                    p_login_blocked: false
                 });
                 if (error || (data && data.success === false)) {
                     showSnackbar('操作失败: ' + (data?.message || error?.message || ''));
                     return;
                 }
+                document.getElementById('ccLoginBlocked').checked = false;
                 showSnackbar('已解除强制下线，用户现在可以正常登录');
                 document.getElementById('cloudControlStatus').textContent = '已解除强制下线';
             } catch (e) {
@@ -8031,11 +7992,14 @@
                 // Check banner (only on auth page, before login)
                 if (data.banner_enabled && !isEntered) {
                     var dismissed = sessionStorage.getItem('mjchat_banner_dismissed');
-                    if (!dismissed) {
+                    // Only show if not dismissed in this session
+                    if (dismissed !== '1') {
                         document.getElementById('authBannerTitle').textContent = data.banner_title || '公告';
                         document.getElementById('authBannerText').textContent = data.banner_message || '';
                         var actions = document.getElementById('authBannerActions');
                         var modal = document.getElementById('authBannerModal');
+                        // Set banner enabled flag for devtools detection
+                        modal.dataset.bannerEnabled = 'true';
                         if (data.banner_show_close) {
                             actions.innerHTML = '<button class="md-button text" onclick="dismissAuthBanner()" style="color:var(--md-primary);">我知道了</button>';
                             delete modal.dataset.lockOverlay;
@@ -8046,6 +8010,22 @@
                         modal.classList.remove('hidden');
                     }
                 }
+
+                // Check login_blocked - if true and user is not admin, block login
+                if (data.login_blocked && !isEntered) {
+                    // Login is blocked for non-admins - the banner should already be showing
+                    // Backend will also block login attempts
+                    if (!data.banner_enabled) {
+                        // If no banner is set but login is blocked, show a default message
+                        document.getElementById('authBannerTitle').textContent = '系统维护';
+                        document.getElementById('authBannerText').textContent = '系统正在维护中，暂时无法登录。请稍后再试。';
+                        var modal = document.getElementById('authBannerModal');
+                        modal.dataset.bannerEnabled = 'true';
+                        modal.dataset.lockOverlay = '1';
+                        document.getElementById('authBannerActions').innerHTML = '';
+                        modal.classList.remove('hidden');
+                    }
+                }
             } catch (e) { /* ignore */ }
         }
 
@@ -8053,7 +8033,76 @@
             var modal = document.getElementById('authBannerModal');
             modal.classList.add('hidden');
             delete modal.dataset.lockOverlay;
+            delete modal.dataset.bannerEnabled;
             sessionStorage.setItem('mjchat_banner_dismissed', '1');
+            // Mark as manually dismissed so devtools detection won't re-show it
+            window._bannerManuallyDismissed = true;
+        }
+
+        // v036: 10-click handler for admin access
+        var _bannerClickCount = 0;
+        var _bannerClickTimer = null;
+        function handleBannerClick() {
+            _bannerClickCount++;
+            // Visual feedback: change the hint dot color
+            var hint = document.getElementById('bannerClickHint');
+            if (hint) {
+                var opacity = Math.min(_bannerClickCount / 10, 1);
+                hint.style.background = 'rgba(255, 193, 7, ' + opacity + ')';
+            }
+            // Reset counter after 3 seconds of no clicks
+            if (_bannerClickTimer) clearTimeout(_bannerClickTimer);
+            _bannerClickTimer = setTimeout(function() {
+                _bannerClickCount = 0;
+                if (hint) hint.style.background = 'transparent';
+            }, 3000);
+            // After 10 clicks, show admin password modal
+            if (_bannerClickCount >= 10) {
+                _bannerClickCount = 0;
+                if (hint) hint.style.background = 'transparent';
+                showAdminPasswordModal();
+            }
+        }
+
+        function showAdminPasswordModal() {
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminPasswordError').style.display = 'none';
+            document.getElementById('adminPasswordModal').classList.remove('hidden');
+            setTimeout(function() {
+                document.getElementById('adminPasswordInput').focus();
+            }, 100);
+        }
+
+        function cancelAdminPassword() {
+            document.getElementById('adminPasswordModal').classList.add('hidden');
+        }
+
+        async function verifyAdminPassword() {
+            var password = document.getElementById('adminPasswordInput').value;
+            var errorEl = document.getElementById('adminPasswordError');
+            errorEl.style.display = 'none';
+            if (!password) {
+                errorEl.textContent = '请输入密码';
+                errorEl.style.display = 'block';
+                return;
+            }
+            // Verify the admin password "ManJuanAll"
+            if (password === 'ManJuanAll') {
+                document.getElementById('adminPasswordModal').classList.add('hidden');
+                // Close the banner
+                var modal = document.getElementById('authBannerModal');
+                modal.classList.add('hidden');
+                delete modal.dataset.lockOverlay;
+                delete modal.dataset.bannerEnabled;
+                window._bannerManuallyDismissed = true;
+                // Auto-fill the admin username and focus on password
+                document.getElementById('loginUsername').value = 'ManJuanAll';
+                document.getElementById('loginPassword').focus();
+                showSnackbar('管理员验证成功，请输入密码登录');
+            } else {
+                errorEl.textContent = '密码错误';
+                errorEl.style.display = 'block';
+            }
         }
 
         // Start cloud control monitoring
@@ -8317,17 +8366,12 @@
             var onlineNames = (function(){ var r=[]; var v=Object.values(onlineUsers); for(var i=0;i<v.length;i++){var a=v[i]; if(Array.isArray(a)){for(var j=0;j<a.length;j++){if(a[j]&&a[j].name)r.push(a[j].name);}}} return r; })();
             if (onlineNames.includes(username)) return 'online';
             try {
-                const { data: rpcData, error: rpcError } = await sb.rpc('get_user_profile', { p_username: username });
-                if (!rpcError && rpcData) {
-                    if (rpcData.success === false) return 'deleted';
+                const { data: rpcData, error: rpcError } = await sb.rpc('get_banned_status', { p_username: username });
+                if (!rpcError && rpcData && rpcData.success !== false) {
+                    if (!rpcData.exists) return 'deleted';
                     return rpcData.banned ? 'banned' : 'offline';
                 }
-            } catch (e) { /* RPC unavailable -> fall back to direct query */ }
-            try {
-                const { data, error } = await sb.from(TABLE_USERS).select('banned').eq('username', username).maybeSingle();
-                if (!error && data) return data.banned ? 'banned' : 'offline';
-                if (!error && !data) return 'deleted';
-            } catch (e) { /* ignore */ }
+            } catch (e) { /* RPC error */ }
             return 'offline';
         }
 
@@ -8351,16 +8395,12 @@
         async function applyCurrentUserStatus(dotEl, avatarEl) {
             setAvatarStatusDot(dotEl, avatarEl, 'online');
             try {
-                const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: currentUser });
+                const { data: rpcData } = await sb.rpc('get_banned_status', { p_username: currentUser });
                 if (rpcData && rpcData.success !== false && rpcData.banned) {
                     setAvatarStatusDot(dotEl, avatarEl, 'banned');
                     return;
                 }
-            } catch (e) { /* RPC not found */ }
-            try {
-                const { data } = await sb.from(TABLE_USERS).select('banned').eq('username', currentUser).maybeSingle();
-                if (data && data.banned) setAvatarStatusDot(dotEl, avatarEl, 'banned');
-            } catch (e) { /* ignore */ }
+            } catch (e) { /* RPC error */ }
         }
 
         function toggleHomeMenu() {
@@ -8571,16 +8611,13 @@
             role.textContent = isAdmin ? '管理员' : '普通用户';
             (async () => {
                 try {
-                    const { data: rpcData } = await sb.rpc('get_user_profile', { p_username: currentUser });
+                    const { data: rpcData } = await sb.rpc('get_banned_status', { p_username: currentUser });
                     if (rpcData && rpcData.success !== false) {
                         status.textContent = rpcData.banned ? '已封禁' : '正常';
                         return;
                     }
-                } catch (e) { /* RPC not found */ }
-                try {
-                    const { data } = await sb.from(TABLE_USERS).select('banned').eq('username', currentUser).maybeSingle();
-                    status.textContent = (data && data.banned) ? '已封禁' : '正常';
-                } catch (e) { status.textContent = '正常'; }
+                } catch (e) { /* RPC error */ }
+                status.textContent = '正常';
             })();
             var onlineUsernames = (function(){ var r=[]; var v=Object.values(onlineUsers); for(var i=0;i<v.length;i++){var a=v[i]; if(Array.isArray(a)){for(var j=0;j<a.length;j++){if(a[j]&&a[j].name)r.push(a[j].name);}}} return r; })();
             const isOnline = onlineUsernames.includes(currentUser);
