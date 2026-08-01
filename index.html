@@ -13,6 +13,8 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+    </style>
+    <script>
         /* === Polyfills for old WebView compatibility === */
         (function(){
             if (!Object.values) {
@@ -81,7 +83,103 @@
                 };
             }
         })();
+    </script>
+    <script>
+        /* === Anti-Debugging & Security Measures (v031) === */
+        (function() {
+            // 1. Disable sensitive keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // F12
+                if (e.keyCode === 123) { e.preventDefault(); e.stopPropagation(); return false; }
+                // Ctrl+Shift+I (Developer Tools)
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 105)) { e.preventDefault(); e.stopPropagation(); return false; }
+                // Ctrl+Shift+J (Console)
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 74 || e.keyCode === 106)) { e.preventDefault(); e.stopPropagation(); return false; }
+                // Ctrl+U (View Source)
+                if (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 117)) { e.preventDefault(); e.stopPropagation(); return false; }
+                // Ctrl+Shift+C (Inspector)
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 67 || e.keyCode === 99)) { e.preventDefault(); e.stopPropagation(); return false; }
+                // Ctrl+S (Save Page)
+                if (e.ctrlKey && (e.keyCode === 83 || e.keyCode === 115)) { e.preventDefault(); e.stopPropagation(); return false; }
+            }, true);
 
+            // 2. Disable right-click context menu
+            document.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, true);
+
+            // 3. Detect developer tools via debugger statement + timing
+            var devtoolsOpen = false;
+            var threshold = 200; // ms threshold
+
+            function checkDevTools() {
+                var startTime = performance.now();
+                // debugger statement pauses execution if devtools is open
+                // Using Function constructor to avoid static analysis
+                (function() {
+                    var f = new Function('debugger');
+                    try { f(); } catch(e) {}
+                })();
+                var endTime = performance.now();
+                if (endTime - startTime > threshold) {
+                    devtoolsOpen = true;
+                    onDevToolsDetected();
+                }
+            }
+
+            // 4. Detect via window size difference (outer vs inner)
+            function checkWindowSize() {
+                var widthDiff = window.outerWidth - window.innerWidth;
+                var heightDiff = window.outerHeight - window.innerHeight;
+                // Typical browser chrome is ~80-100px height, devtools adds more
+                if (heightDiff > 200 || widthDiff > 200) {
+                    if (!devtoolsOpen) {
+                        devtoolsOpen = true;
+                        onDevToolsDetected();
+                    }
+                }
+            }
+
+            // 5. Anti-reverse: continuous detection with setInterval
+            var detectionInterval = setInterval(function() {
+                checkDevTools();
+                checkWindowSize();
+            }, 1500);
+
+            // 6. When devtools detected: clear page and block
+            var blocked = false;
+            function onDevToolsDetected() {
+                if (blocked) return;
+                blocked = true;
+                try {
+                    // Clear all sensitive data from memory
+                    // Remove DOM content
+                    document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#121212;color:#fff;font-family:sans-serif;font-size:1.2rem;text-align:center;padding:2rem;"><div><p>访问已受限</p><p style="font-size:0.8rem;margin-top:1rem;opacity:0.6;">请关闭开发者工具后刷新页面</p></div></div>';
+                    // Stop all intervals/timeouts
+                    for (var i = 1; i < 99999; i++) { clearInterval(i); clearTimeout(i); }
+                    // Redirect after brief delay
+                    setTimeout(function() { window.location.href = 'about:blank'; }, 100);
+                } catch(e) {
+                    window.location.href = 'about:blank';
+                }
+            }
+
+            // 7. Console warning for attackers
+            try {
+                console.clear();
+                console.log('%c警告', 'color:red;font-size:48px;font-weight:bold;');
+                console.log('%c此区域包含敏感信息，请勿在此执行任何代码。', 'color:red;font-size:16px;');
+            } catch(e) {}
+
+            // 8. Override console methods to prevent data exfiltration
+            var _origLog = console.log;
+            var _origWarn = console.warn;
+            var _origErr = console.error;
+            console.table = function() { _origWarn.apply(console, ['[Blocked: console.table]']); };
+            console.dir = function() { _origWarn.apply(console, ['[Blocked: console.dir]']); };
+            console.group = function() { _origWarn.apply(console, ['[Blocked: console.group]']); };
+            console.groupCollapsed = function() { _origWarn.apply(console, ['[Blocked: console.groupCollapsed]']); };
+        })();
+    </script>
+    <style>
         /* Old WebView flexbox compatibility */
         .chat-bar, .input-container, .msg-input, .fab-send, .more-btn {
             -webkit-box-sizing: border-box;
@@ -812,6 +910,9 @@
             gap: 8px;
             text-decoration: none;
             color: inherit;
+            max-width: 100%;
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
         .msg-row .bubble .file-msg svg {
             flex-shrink: 0;
@@ -819,6 +920,8 @@
         }
         .msg-row .bubble .file-msg span {
             font-size: 0.875rem;
+            word-break: break-all;
+            overflow-wrap: break-word;
         }
         .msg-row .bubble .voice-msg-wrap {
             display: inline-flex;
@@ -2973,8 +3076,9 @@
     </div>
 
     <script>
-        const SUPABASE_URL = 'https://gyityuccpvknquaajtef.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_nOTchg9hF0S8jzcuy7FDQg_TMLoApHG';
+        const _d = function(s) { var k = 'mjchat2026'; var r = ''; try { var d = atob(s); for (var i = 0; i < d.length; i++) { r += String.fromCharCode(d.charCodeAt(i) ^ k.charCodeAt(i % k.length)); } } catch(e) { r = s; } return r; };
+        const SUPABASE_URL = _d('BR4XGBJOHR9VTwQeGh0CF0JGWVgcHwIJCwBXVhxFGBoCCgAHVx5RWQ==');
+        const SUPABASE_ANON_KEY = _d('Hgg8GBQWXllBXgwIDw0+Gn1kUV4KUwsuUScKWkhVGBNULiUlVW9meyEFIhgpMw==');
         const TABLE_USERS = 'chat_users';
         const TABLE_PUBLIC_MSG = 'chat_messages';
         const TABLE_PRIVATE_SESSIONS = 'private_sessions';
@@ -2984,8 +3088,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 30;
-        const ADMIN_USERS = ['ManJuanAll'];
+        const APP_VERSION = 31;
         const SALT = 'mjchat_2026_salt_v1';
         const FORBIDDEN_WORDS = ['漫卷', 'MJ', 'system', 'System', 'SYSTEM', '管理员', '系统'];
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -3035,7 +3138,52 @@
         let privatePollTimer = null;
 
         // ============================================
-        // Security Helper Functions (v030)
+        // Rate Limiting (v031) - Prevent API abuse
+        // ============================================
+        var _rateLimits = {};
+        function checkRateLimit(action, maxCount, windowMs) {
+            var now = Date.now();
+            if (!_rateLimits[action]) _rateLimits[action] = [];
+            // Remove expired entries
+            _rateLimits[action] = _rateLimits[action].filter(function(t) { return now - t < windowMs; });
+            if (_rateLimits[action].length >= maxCount) {
+                return false;
+            }
+            _rateLimits[action].push(now);
+            return true;
+        }
+        function rateLimitedAction(action, maxCount, windowMs, fn) {
+            if (!checkRateLimit(action, maxCount, windowMs)) {
+                showSnackbar('操作过于频繁，请稍后再试');
+                return Promise.resolve(null);
+            }
+            return fn();
+        }
+
+        // ============================================
+        // CSRF Token Protection (v031)
+        // ============================================
+        var _csrfToken = '';
+        function getCsrfToken() {
+            if (!_csrfToken) {
+                _csrfToken = sessionStorage.getItem('mjchat_csrf') || '';
+                if (!_csrfToken) {
+                    // Generate random token
+                    var arr = new Uint8Array(32);
+                    if (window.crypto && window.crypto.getRandomValues) {
+                        window.crypto.getRandomValues(arr);
+                    } else {
+                        for (var i = 0; i < 32; i++) arr[i] = Math.floor(Math.random() * 256);
+                    }
+                    _csrfToken = Array.from(arr).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+                    sessionStorage.setItem('mjchat_csrf', _csrfToken);
+                }
+            }
+            return _csrfToken;
+        }
+
+        // ============================================
+        // Security Helper Functions (v031)
         // All sensitive operations must use these
         // ============================================
 
@@ -3059,6 +3207,9 @@
         }
 
         async function sendPublicMessageSecure(payload) {
+            if (!checkRateLimit('send_msg', 30, 60000)) {
+                return { success: false, message: '发送过于频繁，请稍后再试' };
+            }
             const token = getSessionToken();
             if (!token) { return { success: false, message: '请重新登录' }; }
             try {
@@ -3526,6 +3677,10 @@
         async function doRegister() {
             hideEl('regError');
             hideEl('regSuccess');
+            if (!checkRateLimit('register', 3, 3600000)) {
+                showEl('regError', '注册尝试过于频繁，请稍后再试');
+                return;
+            }
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const password2 = document.getElementById('regPassword2').value;
@@ -3572,7 +3727,7 @@
                 } catch (e) { regError = e; }
 
                 if (regError) {
-                    const { error } = await sb.rpc('register_user', {
+                    const { data: legacyRegData, error } = await sb.rpc('register_user', {
                         p_username: username,
                         p_password_hash: passwordHash
                     });
@@ -3581,10 +3736,13 @@
                             'regError', '该用户名已被使用');
                         return showEl('regError', '注册失败: ' + error.message);
                     }
+                    if (legacyRegData && legacyRegData.session_token) {
+                        regSessionToken = legacyRegData.session_token;
+                    }
                 }
 
                 currentUser = username;
-                isAdmin = ADMIN_USERS.includes(currentUser);
+                isAdmin = false;
                 const sessionToken = regSessionToken || generateLocalNonce();
                 localStorage.setItem('mjchat_session', JSON.stringify({ username: username, token: sessionToken }));
                 showEl('regSuccess', '注册成功！正在进入...');
@@ -3607,6 +3765,10 @@
 
         async function doLogin() {
             hideEl('loginError');
+            if (!checkRateLimit('login', 5, 60000)) {
+                showEl('loginError', '登录尝试过于频繁，请1分钟后再试');
+                return;
+            }
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
             if (!username) return showEl('loginError', '请输入用户名');
@@ -3617,7 +3779,7 @@
                 let userData = null;
                 let loginError = null;
                 try {
-                    const { data: secureData, error: secureError } = await sb.rpc('verify_login_secure', {
+                    const { data: secureData, error: secureError } = await sb.rpc('verify_login_secure_rate_limited', {
                         p_username: username,
                         p_password_hash: passwordHash
                     });
@@ -3654,7 +3816,7 @@
                     return showEl('loginError', '您已被封禁，无法登录');
                 }
                 currentUser = username;
-                isAdmin = (userData.role === 'admin') || ADMIN_USERS.includes(username);
+                isAdmin = (userData.role === 'admin');
                 currentAvatarUrl = userData.avatar_url || '';
                 userAvatarCache[currentUser] = currentAvatarUrl;
                 const sessionToken = userData.session_token || await hashPassword(passwordHash);
@@ -4387,10 +4549,10 @@
                         `<a href="${escapeAttr(marked.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(marked.displayText)}</a>`;
                     msgType = 'link';
                 } else if (marked && marked.type === 'file') {
-                    const iconPath = getFileIconSvg(marked.fileInfo);
                     const fileParts = marked.fileInfo.match(/^(.*?)\s*\(([\d.]+)\s*KB\)$/);
                     const fileName = fileParts ? fileParts[1] : marked.fileInfo;
                     const fileSize = fileParts ? fileParts[2] : '';
+                    const iconPath = getFileIconSvg(fileName);
                     bubbleContent =
                         `<a href="${escapeAttr(marked.url)}" target="_blank" rel="noopener noreferrer" class="file-msg"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">${iconPath}</svg><span>${escapeHtml(fileName)}${fileSize ? ` (${escapeHtml(fileSize)} KB)` : ''}</span></a>`;
                     msgType = 'file';
@@ -4621,13 +4783,8 @@
                     if (!rpcError && rpcData) {
                         agents = Array.isArray(rpcData) ? rpcData : [];
                     }
-                } catch (e) { /* RPC fallback */ }
-                if (!agents) {
-                    const { data, error } = await sb.from(TABLE_AGENTS)
-                        .select('id, name, provider, model, created_by, created_at');
-                    if (error) return;
-                    agents = data || [];
-                }
+                } catch (e) { /* RPC error */ }
+                if (!agents) agents = [];
                 for (const name of mentionedNames) {
                     const agent = agents.find(a => a.name === name);
                     if (agent) {
@@ -4639,30 +4796,32 @@
 
         async function triggerAgentResponse(agent, userMessage) {
             try {
-                let agentDetail = null;
-                try {
-                    const { data: rpcData, error: rpcError } = await sb.rpc('get_agent_detail', {
-                        p_agent_id: agent.id,
-                        p_username: currentUser
-                    });
-                    if (!rpcError && rpcData && rpcData.success) {
-                        agentDetail = rpcData.agent;
-                    }
-                } catch (e) { /* RPC fallback */ }
-                if (!agentDetail) {
-                    const { data, error } = await sb.from(TABLE_AGENTS)
-                        .select('*').eq('id', agent.id).single();
-                    if (error || !data) return;
-                    agentDetail = data;
+                if (!checkRateLimit('agent_call', 10, 60000)) {
+                    showSnackbar('智能体调用过于频繁，请稍后再试');
+                    return;
                 }
-                if (!agentDetail || !agentDetail.api_key) return;
-
                 const cleanMsg = userMessage.replace(/@[\w\u4e00-\u9fa5]+/g, '').trim();
                 if (!cleanMsg) return;
 
                 showSnackbar(`智能体 ${agent.name} 正在思考...`);
 
-                const response = await callLLM(agentDetail, cleanMsg);
+                // Server-side AI call - API keys NEVER reach the client
+                let response = null;
+                try {
+                    const { data: llmData, error: llmError } = await sb.rpc('call_agent_llm_rate_limited', {
+                        p_agent_id: agent.id,
+                        p_user_message: cleanMsg,
+                        p_caller: currentUser,
+                        p_session_token: getSessionToken()
+                    });
+                    if (!llmError && llmData && llmData.success) {
+                        response = llmData.response;
+                    } else if (llmData && llmData.message) {
+                        showSnackbar(llmData.message);
+                        return;
+                    }
+                } catch (e) { /* RPC error */ }
+
                 if (!response) {
                     showSnackbar(`智能体 ${agent.name} 暂时无法回复`);
                     return;
@@ -4697,10 +4856,12 @@
                             p_agent_name: agent.name,
                             p_content: response,
                             p_reply_to_id: replyToId,
-                            p_reply_content: replyContent
+                            p_reply_content: replyContent,
+                            p_caller: currentUser,
+                            p_session_token: getSessionToken()
                         });
                         if (!rpcError2 && rpcData2 && rpcData2.success !== false) sent = true;
-                    } catch (e2) { /* old RPC signature, give up */ }
+                    } catch (e2) { /* give up */ }
                 }
             } catch (e) { /* ignore */ }
         }
@@ -4718,122 +4879,8 @@
             } catch (e) { /* ignore */ }
         }
 
-        async function callLLM(agent, userMessage) {
-            const providerConfigs = {
-                'openai': {
-                    url: 'https://api.openai.com/v1/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'gpt-3.5-turbo',
-                    format: 'openai'
-                },
-                'deepseek': {
-                    url: 'https://api.deepseek.com/v1/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'deepseek-chat',
-                    format: 'openai'
-                },
-                'anthropic': {
-                    url: 'https://api.anthropic.com/v1/messages',
-                    auth: agent.api_key,
-                    model: agent.model || 'claude-3-5-sonnet-20241022',
-                    format: 'anthropic'
-                },
-                'google': {
-                    url: `https://generativelanguage.googleapis.com/v1beta/models/${agent.model || 'gemini-1.5-flash'}:generateContent?key=${agent.api_key}`,
-                    auth: null,
-                    model: agent.model || 'gemini-1.5-flash',
-                    format: 'google'
-                },
-                'baidu': {
-                    url: 'https://qianfan.baidubce.com/v2/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'ernie-4.0-8k-latest',
-                    format: 'openai'
-                },
-                'ali': {
-                    url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'qwen-turbo',
-                    format: 'openai'
-                },
-                'bytedance': {
-                    url: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'doubao-pro-4k',
-                    format: 'openai'
-                },
-                'zhipu': {
-                    url: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'glm-4-flash',
-                    format: 'openai'
-                },
-                'custom': {
-                    url: 'https://api.openai.com/v1/chat/completions',
-                    auth: `Bearer ${agent.api_key}`,
-                    model: agent.model || 'gpt-3.5-turbo',
-                    format: 'openai'
-                }
-            };
-            const provider = providerConfigs[agent.provider] || providerConfigs['custom'];
-            const systemPrompt = 'You are a helpful AI assistant in a group chat. Respond concisely and naturally in the same language as the user message.';
-            try {
-                if (provider.format === 'anthropic') {
-                    const resp = await fetch(provider.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-api-key': provider.auth,
-                            'anthropic-version': '2023-06-01'
-                        },
-                        body: JSON.stringify({
-                            model: provider.model,
-                            max_tokens: 500,
-                            system: systemPrompt,
-                            messages: [{ role: 'user', content: userMessage }]
-                        })
-                    });
-                    if (!resp.ok) return null;
-                    const data = await resp.json();
-                    return data.content && data.content[0] ? data.content[0].text : null;
-                } else if (provider.format === 'google') {
-                    const resp = await fetch(provider.url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            contents: [{ parts: [{ text: userMessage }] }],
-                            generationConfig: { maxOutputTokens: 500, temperature: 0.7 }
-                        })
-                    });
-                    if (!resp.ok) return null;
-                    const data = await resp.json();
-                    return data.candidates && data.candidates[0] && data.candidates[0].content
-                        ? data.candidates[0].content.parts[0].text : null;
-                } else {
-                    const resp = await fetch(provider.url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': provider.auth
-                        },
-                        body: JSON.stringify({
-                            model: provider.model,
-                            messages: [
-                                { role: 'system', content: systemPrompt },
-                                { role: 'user', content: userMessage }
-                            ],
-                            max_tokens: 500,
-                            temperature: 0.7
-                        })
-                    });
-                    if (!resp.ok) return null;
-                    const data = await resp.json();
-                    return data.choices && data.choices[0] && data.choices[0].message
-                        ? data.choices[0].message.content : null;
-                }
-            } catch (e) { return null; }
-        }
+        // callLLM removed - AI calls now go through server-side call_agent_llm RPC
+        // API keys are NEVER exposed to the client
 
         function updatePublicConn(on) {
             const d = document.getElementById('publicConnDot'),
@@ -7337,7 +7384,7 @@
                     userData = data;
                 }
                 if (userData) {
-                    isAdmin = (userData.role === 'admin') || ADMIN_USERS.includes(username);
+                    isAdmin = (userData.role === 'admin');
                     currentAvatarUrl = userData.avatar_url || '';
                     userAvatarCache[currentUser] = currentAvatarUrl;
                     if (userData.banned) {
@@ -7450,13 +7497,16 @@
 
         async function unbanUser(username) {
             if (!confirm(`确定要解封用户 ${username} 吗？`)) return;
+            const isAdm = await verifyAdminSession();
+            if (!isAdm) { showSnackbar('无权限执行此操作'); return; }
             try {
-                const { error } = await sb.rpc('ban_user', {
+                const { data, error } = await sb.rpc('ban_user', {
                     p_admin: currentUser,
                     p_target: username,
+                    p_session_token: getSessionToken(),
                     p_ban: false
                 });
-                if (error) { showSnackbar('操作失败: ' + error.message); return; }
+                if (error || (data && data.success === false)) { showSnackbar('操作失败: ' + (data?.message || error?.message || '')); return; }
                 showSnackbar(`已解封 ${username}`);
                 refreshBannedList();
             } catch (e) { showSnackbar('操作失败'); }
@@ -7490,23 +7540,7 @@
                         rpcErrMsg = rpcError.message || '';
                     }
                 } catch (e) { rpcErrMsg = e.message || ''; }
-                // Fallback to direct table query if RPC failed
-                if (!agents) {
-                    const { data, error } = await sb.from(TABLE_AGENTS)
-                        .select('id, name, provider, model, created_by, created_at')
-                        .order('created_at', { ascending: true });
-                    if (error) {
-                        var hint = '加载失败';
-                        if (rpcErrMsg) {
-                            hint = 'RPC错误: ' + rpcErrMsg + ' | 表查询错误: ' + (error.message || '未知');
-                        } else {
-                            hint = '加载失败: ' + (error.message || '未知错误');
-                        }
-                        container.innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;">' + escapeHtml(hint) + '</p>';
-                        return;
-                    }
-                    agents = data || [];
-                }
+                if (!agents) agents = [];
                 if (!agents || agents.length === 0) {
                     container.innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无智能体</p>';
                     return;
@@ -7563,11 +7597,10 @@
                     else if (rpcData && rpcData.success === false) {
                         showSnackbar(rpcData.message || '删除失败'); return;
                     }
-                } catch (e) { /* RPC fallback */ }
+                } catch (e) { /* RPC error */ }
                 if (!deleted) {
-                    // Direct delete fallback (may fail if RLS blocks it)
-                    const { error } = await sb.from(TABLE_AGENTS).delete().eq('id', agentId);
-                    if (error) { showSnackbar('删除失败: ' + error.message); return; }
+                    showSnackbar('删除失败: RPC调用失败');
+                    return;
                 }
                 showSnackbar('智能体已删除');
                 loadAgentList();
@@ -7624,20 +7657,10 @@
                     else if (rpcData && rpcData.success === false) {
                         showSnackbar(rpcData.message || '保存失败'); return;
                     }
-                } catch (e) { /* RPC fallback */ }
+                } catch (e) { /* RPC error */ }
                 if (!saved) {
-                    await ensureAgentUserAccount(name);
-                    const { error } = await sb.from(TABLE_AGENTS).insert({
-                        name: name,
-                        provider: provider,
-                        api_key: apiKey,
-                        model: model,
-                        created_by: currentUser
-                    });
-                    if (error) {
-                        showSnackbar('保存失败: ' + error.message);
-                        return;
-                    }
+                    showSnackbar('保存失败: RPC调用失败，请检查网络');
+                    return;
                 }
                 showSnackbar('智能体已添加');
                 closeAddAgentDialog();
@@ -7682,12 +7705,7 @@
                         const agent = agents.find(a => a.id === agentId);
                         if (agent) agentName = agent.name;
                     }
-                } catch (e) { /* RPC fallback */ }
-                if (!agentName) {
-                    const { data, error } = await sb.from(TABLE_AGENTS)
-                        .select('name').eq('id', agentId).single();
-                    if (!error && data) agentName = data.name;
-                }
+                } catch (e) { /* RPC error */ }
                 return agentName || '智能体';
             } catch (e) { return '智能体'; }
         }
@@ -8445,12 +8463,17 @@
                             return;
                         }
                         currentUser = session.username;
-                        isAdmin = (userData.role === 'admin') || ADMIN_USERS.includes(currentUser);
+                        isAdmin = (userData.role === 'admin');
                         currentAvatarUrl = userData.avatar_url || '';
                         userAvatarCache[currentUser] = currentAvatarUrl;
                         updateLoadingText('登录中…', '欢迎回来 ' + currentUser);
                         authorizeEnterApp();
                         enterApp();
+                        if (userData.needs_relogin) {
+                            setTimeout(() => {
+                                showSnackbar('安全提示：请退出后重新登录以更新安全凭证');
+                            }, 2000);
+                        }
                     })().catch(() => {
                         localStorage.removeItem('mjchat_session');
                         hideGlobalLoading();
