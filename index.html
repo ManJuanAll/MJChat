@@ -2996,8 +2996,57 @@
                         <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
                         <span>数据统计</span>
                     </div>
+                    <div class="admin-action-item" onclick="closeAdminDialog();showCloudControl();">
+                        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.25 1.26 1.27.06c1.48.07 2.59 1.28 2.59 2.75 0 1.49-1.2 2.5-2.5 2.5z"/></svg>
+                        <span>云控管理</span>
+                    </div>
                 </div>
                 <div class="dialog-actions" style="margin-top:16px;"><button class="md-button text" onclick="closeAdminDialog()">关闭</button></div>
+            </div>
+        </div>
+
+        <!-- 云控管理对话框 -->
+        <div class="dialog-overlay hidden" id="cloudControlDialog" onclick="if(event.target===this)closeCloudControl()">
+            <div class="md-dialog" style="max-width:500px;width:90vw;max-height:85vh;overflow-y:auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h2>云控管理</h2>
+                    <button onclick="closeCloudControl()" style="background:none;border:none;color:var(--md-on-surface);font-size:1.5rem;cursor:pointer;padding:4px;">✕</button>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">强制下线</h3>
+                    <button class="md-button primary" onclick="forceLogoutAllUsers()" style="width:100%;background:var(--md-error);color:#fff;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;margin-bottom:8px;">一键下线所有人（除自己）</button>
+                    <button class="md-button primary" onclick="resetForceLogout()" style="width:100%;background:var(--md-surface-4dp);color:var(--md-on-surface);padding:10px;border:none;border-radius:8px;font-size:0.8125rem;cursor:pointer;margin-bottom:8px;border:1px solid var(--md-outline);">解除强制下线（允许用户重新登录）</button>
+                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">一键下线后，用户需重新登录。点击「解除」后用户才能正常登录。</p>
+                </div>
+
+                <div style="margin-bottom:20px;">
+                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">登录/注册页公告</h3>
+                    <label style="display:flex;align-items:center;margin-bottom:12px;cursor:pointer;">
+                        <input type="checkbox" id="ccBannerEnabled" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-primary);">
+                        <span style="font-size:0.875rem;">显示公告模态框</span>
+                    </label>
+                    <input type="text" id="ccBannerTitle" placeholder="公告标题（如：系统维护通知）" style="width:100%;padding:10px 12px;background:var(--md-surface-4dp);border:1px solid var(--md-outline);border-radius:8px;color:var(--md-on-surface);font-size:0.875rem;margin-bottom:8px;box-sizing:border-box;">
+                    <textarea id="ccBannerMessage" placeholder="公告内容..." style="width:100%;padding:10px 12px;background:var(--md-surface-4dp);border:1px solid var(--md-outline);border-radius:8px;color:var(--md-on-surface);font-size:0.875rem;margin-bottom:8px;min-height:80px;resize:vertical;box-sizing:border-box;"></textarea>
+                    <label style="display:flex;align-items:center;cursor:pointer;">
+                        <input type="checkbox" id="ccBannerShowClose" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-primary);">
+                        <span style="font-size:0.875rem;">允许用户关闭公告</span>
+                    </label>
+                </div>
+
+                <button class="md-button primary" onclick="saveCloudControl()" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;background:var(--md-primary);color:#fff;margin-bottom:8px;">保存设置</button>
+                <p id="cloudControlStatus" style="font-size:0.75rem;color:var(--md-on-surface-dim);text-align:center;"></p>
+            </div>
+        </div>
+
+        <!-- 登录/注册页公告模态框 -->
+        <div class="dialog-overlay hidden" id="authBannerModal" style="z-index:9999;">
+            <div class="md-dialog" style="max-width:400px;width:90vw;">
+                <h2 id="authBannerTitle" style="margin-bottom:12px;font-size:1.1rem;">公告</h2>
+                <p id="authBannerText" style="margin-bottom:20px;font-size:0.875rem;line-height:1.5;white-space:pre-wrap;">公告内容</p>
+                <div class="dialog-actions" id="authBannerActions">
+                    <button class="md-button text" onclick="dismissAuthBanner()" style="color:var(--md-primary);">我知道了</button>
+                </div>
             </div>
         </div>
 
@@ -3088,7 +3137,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 33;
+        const APP_VERSION = 34;
         const SALT = 'mjchat_2026_salt_v1';
         const FORBIDDEN_WORDS = ['漫卷', 'MJ', 'system', 'System', 'SYSTEM', '管理员', '系统'];
         const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -7868,6 +7917,154 @@
             document.getElementById('adminDialog').classList.add('hidden');
         }
 
+        // ============================================
+        // Cloud Control Functions (v034)
+        // ============================================
+        var _cloudControlInterval = null;
+
+        function showCloudControl() {
+            document.getElementById('cloudControlDialog').classList.remove('hidden');
+            loadCloudControl();
+        }
+
+        function closeCloudControl() {
+            document.getElementById('cloudControlDialog').classList.add('hidden');
+        }
+
+        async function loadCloudControl() {
+            try {
+                const { data, error } = await sb.rpc('get_cloud_control');
+                if (!error && data && data.success) {
+                    document.getElementById('ccBannerEnabled').checked = data.banner_enabled;
+                    document.getElementById('ccBannerTitle').value = data.banner_title || '';
+                    document.getElementById('ccBannerMessage').value = data.banner_message || '';
+                    document.getElementById('ccBannerShowClose').checked = data.banner_show_close;
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        async function saveCloudControl() {
+            const enabled = document.getElementById('ccBannerEnabled').checked;
+            const title = document.getElementById('ccBannerTitle').value.trim();
+            const message = document.getElementById('ccBannerMessage').value.trim();
+            const showClose = document.getElementById('ccBannerShowClose').checked;
+            try {
+                const { data, error } = await sb.rpc('update_cloud_control', {
+                    p_admin: currentUser,
+                    p_session_token: getSessionToken(),
+                    p_force_logout_all: false,
+                    p_force_logout_except: '',
+                    p_banner_enabled: enabled,
+                    p_banner_title: title,
+                    p_banner_message: message,
+                    p_banner_show_close: showClose
+                });
+                if (error || (data && data.success === false)) {
+                    document.getElementById('cloudControlStatus').textContent = '保存失败: ' + (data?.message || error?.message || '');
+                    return;
+                }
+                document.getElementById('cloudControlStatus').textContent = '设置已保存';
+                showSnackbar('云控设置已保存');
+            } catch (e) {
+                document.getElementById('cloudControlStatus').textContent = '保存失败';
+            }
+        }
+
+        async function forceLogoutAllUsers() {
+            if (!confirm('确定要强制下线所有用户吗？他们需要重新登录。')) return;
+            try {
+                const { data, error } = await sb.rpc('force_logout_all_users', {
+                    p_admin: currentUser,
+                    p_session_token: getSessionToken()
+                });
+                if (error || (data && data.success === false)) {
+                    showSnackbar('操作失败: ' + (data?.message || error?.message || ''));
+                    return;
+                }
+                showSnackbar(data.message || '已强制下线所有用户');
+                document.getElementById('cloudControlStatus').textContent = data.message;
+            } catch (e) {
+                showSnackbar('操作失败');
+            }
+        }
+
+        async function resetForceLogout() {
+            try {
+                const { data, error } = await sb.rpc('update_cloud_control', {
+                    p_admin: currentUser,
+                    p_session_token: getSessionToken(),
+                    p_force_logout_all: false,
+                    p_force_logout_except: '',
+                    p_banner_enabled: document.getElementById('ccBannerEnabled').checked,
+                    p_banner_title: document.getElementById('ccBannerTitle').value.trim(),
+                    p_banner_message: document.getElementById('ccBannerMessage').value.trim(),
+                    p_banner_show_close: document.getElementById('ccBannerShowClose').checked
+                });
+                if (error || (data && data.success === false)) {
+                    showSnackbar('操作失败: ' + (data?.message || error?.message || ''));
+                    return;
+                }
+                showSnackbar('已解除强制下线，用户现在可以正常登录');
+                document.getElementById('cloudControlStatus').textContent = '已解除强制下线';
+            } catch (e) {
+                showSnackbar('操作失败');
+            }
+        }
+
+        async function checkCloudControl() {
+            try {
+                const { data, error } = await sb.rpc('get_cloud_control');
+                if (error || !data || !data.success) return;
+
+                // Check force logout - only if user is currently in the app
+                if (data.force_logout_all && isEntered) {
+                    var except = data.force_logout_except || '';
+                    if (currentUser && currentUser !== except) {
+                        // This user should be logged out
+                        localStorage.removeItem('mjchat_session');
+                        alert('您已被管理员强制下线，请重新登录');
+                        window.location.reload();
+                        return;
+                    }
+                }
+
+                // Check banner (only on auth page, before login)
+                if (data.banner_enabled && !isEntered) {
+                    var dismissed = sessionStorage.getItem('mjchat_banner_dismissed');
+                    if (!dismissed) {
+                        document.getElementById('authBannerTitle').textContent = data.banner_title || '公告';
+                        document.getElementById('authBannerText').textContent = data.banner_message || '';
+                        var actions = document.getElementById('authBannerActions');
+                        var modal = document.getElementById('authBannerModal');
+                        if (data.banner_show_close) {
+                            actions.innerHTML = '<button class="md-button text" onclick="dismissAuthBanner()" style="color:var(--md-primary);">我知道了</button>';
+                            delete modal.dataset.lockOverlay;
+                        } else {
+                            actions.innerHTML = '';
+                            modal.dataset.lockOverlay = '1';
+                        }
+                        modal.classList.remove('hidden');
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function dismissAuthBanner() {
+            var modal = document.getElementById('authBannerModal');
+            modal.classList.add('hidden');
+            delete modal.dataset.lockOverlay;
+            sessionStorage.setItem('mjchat_banner_dismissed', '1');
+        }
+
+        // Start cloud control monitoring
+        function initCloudControl() {
+            // Check immediately
+            checkCloudControl();
+            // Check every 30 seconds
+            if (_cloudControlInterval) clearInterval(_cloudControlInterval);
+            _cloudControlInterval = setInterval(checkCloudControl, 30000);
+        }
+
         /* Removed: cleanupGarbledMsgs */
 
         function showClearDialog() {
@@ -8414,6 +8611,9 @@
                 }
             });
 
+            // 启动云控监控 (检查公告 + 强制下线)
+            initCloudControl();
+
             restoreSession();
         }
 
@@ -8492,7 +8692,7 @@
 
         document.querySelectorAll('.dialog-overlay').forEach(el => {
             el.addEventListener('click', function(e) {
-                if (e.target === this) {
+                if (e.target === this && !this.dataset.lockOverlay) {
                     this.classList.add('hidden');
                 }
             });
