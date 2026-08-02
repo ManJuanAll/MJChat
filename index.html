@@ -470,17 +470,20 @@
         }
         .conn-capsule.loading .lc {
             display: inline-block;
-            animation: md-circular-rotate 1.4s linear infinite;
+            /* v049: 不要额外的整体旋转 — 只保留内部 circle 的 md-circular-dash 动画 */
         }
         .conn-capsule .lc svg {
             width: 100%;
             height: 100%;
+            /* v049: 去掉外层旋转，只保留内层 circle 的 dash 动画 */
+            display: block;
         }
         .conn-capsule .lc circle {
             fill: none;
             stroke: currentColor;
             stroke-width: 4;
             stroke-linecap: round;
+            transform-origin: 50% 50%;
             stroke-dasharray: 1, 200;
             stroke-dashoffset: 0;
             animation: md-circular-dash 1.4s ease-in-out infinite;
@@ -3286,7 +3289,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 48; // MJChat v048
+        const APP_VERSION = 49; // MJChat v049
         const CC_BANNER_TITLE = '系统维护';
         const CC_BANNER_MSG = '系统正在维护中，暂时无法登录。请联系管理员解除维护状态。';
         const SALT = 'mjchat_2026_salt_v1';
@@ -4106,6 +4109,17 @@
 
                 currentUser = username;
                 isAdmin = false;
+                // v049: 云控 login_blocked 时直接拦截注册，不进入主页面
+                try {
+                    if (await shouldBlockSessionForLoginLocked()) {
+                        _loginBlockedByCC = true;
+                        _prevLoginBlocked = true;
+                        hideGlobalLoading();
+                        showLogin();
+                        showAuthBannerDynamic(CC_BANNER_TITLE, CC_BANNER_MSG, false, true);
+                        return;
+                    }
+                } catch (ccErr) { /* ignore */ }
                 const sessionToken = regSessionToken || generateLocalNonce();
                 localStorage.setItem('mjchat_session', JSON.stringify({ username: username, token: sessionToken }));
                 showEl('regSuccess', '注册成功！正在进入...');
@@ -4262,11 +4276,23 @@
                 if (_loginTimedOut) return;
 
                 clearTimeout(_loginTimeout);
-                // v047: 登录即将成功进入主页面，清除 init 阶段的 safety timeout，
-                // 避免在 enterApp/connectPublic 等待期间被强制跳回登录页
+                // v047/v049: 登录即将成功进入主页面，清除 init 阶段的 safety timeout
                 if (window.__mjchatSafetyTimeout) {
                     clearTimeout(window.__mjchatSafetyTimeout);
                     window.__mjchatSafetyTimeout = null;
+                }
+                // v049: 再次检查云控——防范后端未拦截 login_blocked 的情况
+                if (!isAdmin) {
+                    try {
+                        if (await shouldBlockSessionForLoginLocked()) {
+                            _loginBlockedByCC = true;
+                            _prevLoginBlocked = true;
+                            hideGlobalLoading();
+                            showLogin();
+                            showAuthBannerDynamic(CC_BANNER_TITLE, CC_BANNER_MSG, false, true);
+                            return;
+                        }
+                    } catch (ccErr) { /* ignore */ }
                 }
                 authorizeEnterApp();
                 enterApp();
@@ -4280,15 +4306,21 @@
         }
 
         let _enterAppAuthorized = false;
-        function authorizeEnterApp() { _enterAppAuthorized = true; }
+        function authorizeEnterApp() {
+            _enterAppAuthorized = true;
+            // v049: 授权即清掉 safety timeout，避免跳回登录
+            if (window.__mjchatSafetyTimeout) {
+                clearTimeout(window.__mjchatSafetyTimeout);
+                window.__mjchatSafetyTimeout = null;
+            }
+        }
         async function enterApp() {
             if (isEntered) return;
             if (!_enterAppAuthorized) {
                 console.error('enterApp 未授权调用');
-                showLogin();
                 return;
             }
-            // v047: 进入 enterApp，清除 safety timeout（不再需要 init 阶段的安全检测）
+            // v047/v049: 进入 enterApp，清除 safety timeout（不再需要 init 阶段的安全检测）
             if (window.__mjchatSafetyTimeout) {
                 clearTimeout(window.__mjchatSafetyTimeout);
                 window.__mjchatSafetyTimeout = null;
@@ -8349,6 +8381,8 @@
                     } catch (e2) { /* direct query also failed */ }
                 }
                 if (!agents) agents = [];
+                // v049: 只显示 enabled 的智能体
+                agents = agents.filter(function(a){ return a.enabled !== false; });
                 if (!agents || agents.length === 0) {
                     container.innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无智能体</p>';
                     return;
@@ -9269,9 +9303,11 @@
                 console.log('[AdminVerify] Final result:', { verified: verified, lastError: lastError });
 
                 if (verified) {
-                    // v046: 场景 3 —— 验证通过后将 login_blocked=false 写入后端，然后刷新页面
+                    // v046/v049: 场景 3 —— 验证通过后将 login_blocked=false 写入后端，然后刷新页面
+                    // v049: 必须确认 RPC 真正成功，否则刷新后又会被 checkCloudControl 重新弹出
+                    var ccUpdated = false;
                     try {
-                        await sb.rpc('update_cloud_control', {
+                        var ccRes = await sb.rpc('update_cloud_control', {
                             p_admin: _adminDynCtx.adminUsername,
                             p_password_hash: passwordHash,
                             p_login_blocked: false,
@@ -9282,9 +9318,25 @@
                             p_banner_message: '',
                             p_banner_show_close: true
                         });
-                        console.log('[AdminVerify] login_blocked set to false in cloud_control');
+                        if (!ccRes.error && !(ccRes.data && ccRes.data.success === false)) {
+                            ccUpdated = true;
+                            console.log('[AdminVerify] login_blocked set to false OK');
+                        } else {
+                            console.warn('[AdminVerify] update_cloud_control returned error:', ccRes.error || ccRes.data);
+                        }
                     } catch (ccErr) {
-                        console.warn('[AdminVerify] update_cloud_control failed (proceeding):', ccErr);
+                        console.warn('[AdminVerify] update_cloud_control exception:', ccErr);
+                    }
+                    if (!ccUpdated) {
+                        // v049: 后端更新失败时不刷新/不关闭 modal，提示用户
+                        if (okBtn) {
+                            okBtn.textContent = '验证';
+                            okBtn.disabled = false;
+                            okBtn.style.opacity = '1';
+                        }
+                        errorEl.textContent = '验证成功但后端更新失败，请重试或手动检查 cloud_control 表';
+                        errorEl.style.display = 'block';
+                        return;
                     }
                     closeAdminPasswordModal(true);
                     // v046: 重置前端状态并刷新，刷新后 banner 消失、后端不再拦截登录
