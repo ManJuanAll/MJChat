@@ -2547,146 +2547,323 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* v055: 设置页面和关于页面样式 */
-        .settings-page, .about-page {
+        /* v059: 设置/关于/管理页面样式 - Material Design 适配深色/浅色主题 */
+        .settings-page, .about-page, .admin-page {
             flex-direction: column;
-            background: var(--md-surface);
+            background: var(--md-background);
             overflow: hidden;
             -webkit-overflow-scrolling: touch;
         }
-        .settings-page .sp-header, .about-page .ap-header {
+        .settings-page .sp-header, .about-page .ap-header, .admin-page .ap-header {
             display: flex;
             align-items: center;
             padding: 0 4px;
             height: 56px;
             flex-shrink: 0;
-            background: var(--md-surface);
+            background: var(--md-surface-4dp);
+            box-shadow: var(--md-elevation-2);
             position: sticky;
             top: 0;
             z-index: 10;
         }
-        .settings-page .sp-body, .about-page .ap-body {
+        .settings-page .sp-header .title,
+        .about-page .ap-header .title,
+        .admin-page .ap-header .title {
+            color: var(--md-on-surface);
+            font-weight: 500;
+        }
+        .settings-page .sp-header .back-btn svg,
+        .about-page .ap-header .back-btn svg,
+        .admin-page .ap-header .back-btn svg {
+            fill: var(--md-primary);
+        }
+        .settings-page .sp-body, .about-page .ap-body, .admin-page .ap-body {
             flex: 1;
-            padding: 8px 0 24px;
+            padding: 8px 0 32px;
             overflow-y: auto;
+            background: var(--md-background);
         }
-        .sp-category {
-            margin: 0 16px 12px;
-            background: var(--md-surface-1dp, #1e1e1e);
-            border-radius: 16px;
+        /* iOS-style grouped card */
+        .sp-group {
+            margin: 0 16px 35px;
+        }
+        .sp-group-title {
+            padding: 0 16px 6px;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--md-on-surface-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        .sp-card {
+            background: var(--md-surface-1dp);
+            border-radius: 12px;
             overflow: hidden;
-        }
-        .sp-category-title {
-            padding: 16px 20px 6px;
-            font-size: 0.8125rem;
-            font-weight: 600;
-            color: var(--md-primary);
         }
         .sp-item {
             display: flex;
             align-items: center;
-            padding: 14px 20px;
+            padding: 13px 16px;
             cursor: pointer;
-            min-height: 52px;
-            transition: background 0.15s;
-            gap: 16px;
-            border-bottom: 1px solid var(--md-outline, rgba(255,255,255,0.06));
+            min-height: 48px;
+            transition: background 0.12s;
+            gap: 12px;
+            border-bottom: 0.5px solid var(--md-outline);
         }
         .sp-item:last-child { border-bottom: none; }
-        .sp-item:active { background: var(--md-surface-2dp, #2a2a2a); }
+        .sp-item:active { background: var(--md-surface-6dp); }
         .sp-item-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             flex-shrink: 0;
-            fill: var(--md-on-surface-variant, #aaa);
+            fill: var(--md-primary);
         }
+        .sp-item-icon.danger { fill: #FF453A; }
         .sp-item-label {
             flex: 1;
-            font-size: 0.9375rem;
+            font-size: 0.95rem;
             color: var(--md-on-surface);
+            font-weight: 400;
         }
+        .sp-item-label.danger { color: #FF453A; }
         .sp-item-value {
-            font-size: 0.8125rem;
-            color: var(--md-on-surface-dim, #888);
+            font-size: 0.85rem;
+            color: var(--md-on-surface-dim);
+            margin-right: 2px;
         }
         .sp-item-chevron {
-            width: 18px;
-            height: 18px;
-            fill: var(--md-on-surface-dim, #666);
+            width: 8px;
+            height: 14px;
+            fill: var(--md-on-surface-dim);
             flex-shrink: 0;
         }
-        .sp-item .md-switch {
-            flex-shrink: 0;
-        }
+        .sp-item .md-switch { flex-shrink: 0; }
         .sp-item-check {
             width: 18px;
             height: 18px;
             fill: var(--md-primary);
             flex-shrink: 0;
         }
-        /* About page */
+        /* iOS-style toggle switch override */
+        .sp-item .md-switch input:checked + .md-switch-track {
+            background: #30D158;
+        }
+        .sp-item .md-switch-track {
+            background: rgba(120,120,128,0.32);
+        }
+        /* About page - iOS style */
         .about-hero {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 32px 0 24px;
+            padding: 40px 0 28px;
         }
         .about-hero img {
-            width: 88px;
-            height: 88px;
-            border-radius: 20px;
-            margin-bottom: 12px;
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            margin-bottom: 14px;
         }
         .about-hero .app-name {
-            font-size: 1.25rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: var(--md-on-surface);
         }
         .about-hero .app-version {
-            font-size: 0.8125rem;
-            color: var(--md-on-surface-dim, #888);
-            margin-top: 2px;
+            font-size: 0.8rem;
+            color: var(--md-on-surface-dim);
+            margin-top: 3px;
         }
         .about-card {
             margin: 0 16px 12px;
-            background: var(--md-surface-1dp, #1e1e1e);
-            border-radius: 16px;
+            background: var(--md-surface-1dp);
+            border-radius: 12px;
             overflow: hidden;
         }
         .about-item {
             display: flex;
             align-items: center;
-            padding: 14px 20px;
+            padding: 13px 16px;
             cursor: pointer;
-            gap: 16px;
-            border-bottom: 1px solid var(--md-outline, rgba(255,255,255,0.06));
+            gap: 12px;
+            border-bottom: 0.5px solid var(--md-outline);
             text-decoration: none;
         }
         .about-item:last-child { border-bottom: none; }
-        .about-item:active { background: var(--md-surface-2dp, #2a2a2a); }
+        .about-item:active { background: var(--md-surface-6dp); }
         .about-item-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
             flex-shrink: 0;
-            fill: var(--md-on-surface-variant, #aaa);
+            fill: var(--md-primary);
         }
-        .about-item-text {
-            flex: 1;
-        }
+        .about-item-text { flex: 1; }
         .about-item-label {
-            font-size: 0.9375rem;
+            font-size: 0.95rem;
             color: var(--md-on-surface);
+            font-weight: 400;
         }
         .about-item-sub {
             font-size: 0.75rem;
-            color: var(--md-on-surface-dim, #888);
-            margin-top: 1px;
+            color: var(--md-on-surface-dim);
+            margin-top: 2px;
         }
         .about-footer {
             text-align: center;
-            padding: 16px;
+            padding: 20px 16px 32px;
             font-size: 0.75rem;
-            color: var(--md-on-surface-dim, #888);
+            color: var(--md-on-surface-dim);
+            line-height: 1.6;
+        }
+        /* Admin page styles */
+        .admin-action-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        .admin-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 13px 16px;
+            border-bottom: 0.5px solid var(--md-outline);
+            font-size: 0.9rem;
+            color: var(--md-on-surface);
+        }
+        .admin-stat-row:last-child { border-bottom: none; }
+        .admin-stat-row .stat-value {
+            color: var(--md-on-surface-dim);
+            font-size: 0.85rem;
+        }
+        .admin-user-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 12px;
+            border-bottom: 0.5px solid var(--md-outline);
+        }
+        .admin-user-row:last-child { border-bottom: none; }
+        .admin-user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .admin-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .admin-user-name {
+            font-size: 0.9rem;
+            color: var(--md-on-surface);
+            font-weight: 500;
+        }
+        .admin-user-meta {
+            font-size: 0.72rem;
+            color: var(--md-on-surface-dim);
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 1px;
+        }
+        .admin-user-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .admin-btn-sm {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            background: var(--md-surface-6dp);
+            color: var(--md-primary);
+        }
+        .admin-btn-sm.danger { color: #FF453A; }
+        .admin-btn-sm.active { background: #30D158; color: #fff; }
+        /* Cloud control page styles */
+        .cc-section {
+            margin: 0 16px 24px;
+        }
+        .cc-section-title {
+            padding: 0 16px 6px;
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--md-on-surface-dim);
+        }
+        .cc-card {
+            background: var(--md-surface-1dp);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 16px;
+        }
+        .cc-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 0.5px solid var(--md-outline);
+        }
+        .cc-row:last-child { border-bottom: none; }
+        .cc-row-label {
+            font-size: 0.9rem;
+            color: var(--md-on-surface);
+        }
+        .cc-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--md-surface-6dp);
+            border: none;
+            border-radius: 8px;
+            color: var(--md-on-surface);
+            font-size: 0.875rem;
+            margin: 6px 0;
+            box-sizing: border-box;
+        }
+        .cc-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--md-surface-6dp);
+            border: none;
+            border-radius: 8px;
+            color: var(--md-on-surface);
+            font-size: 0.875rem;
+            margin: 6px 0;
+            min-height: 72px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .cc-desc {
+            font-size: 0.72rem;
+            color: var(--md-on-surface-dim);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+        .cc-save-btn {
+            width: calc(100% - 32px);
+            margin: 8px 16px;
+            padding: 13px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: var(--md-primary);
+            color: var(--md-on-primary);
+        }
+        .cc-save-btn:active { opacity: 0.8; }
+        .cc-status {
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--md-on-surface-dim);
+            padding: 8px 16px;
         }
         @media (max-width: 600px) {
             body {
@@ -3142,7 +3319,7 @@
                 <div class="search-results" id="searchResults"><div class="empty">输入用户名开始搜索</div></div>
             </div>
 
-            <!-- v055: Settings Page -->
+            <!-- v058: Settings Page - iOS Style -->
             <div class="page settings-page" id="settingsPage">
                 <div class="app-bar sp-header">
                     <div class="title-block">
@@ -3151,43 +3328,80 @@
                     </div>
                 </div>
                 <div class="sp-body">
-                    <div class="sp-category">
-                        <div class="sp-category-title">外观</div>
-                        <div class="sp-item" onclick="setTheme('dark')">
-                            <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.14,3.36,7.5,7.5,7.5c0.68,0,1.35-0.09,1.99-0.27C17.45,17.34,15.29,19,12.75,19 c-3.43,0-6.25-2.82-6.25-6.25C6.5,9.08,7.66,6.88,9.37,5.51 M12,2c-5.52,0-10,4.48-10,10s4.48,10,10,10s10-4.48,10-10 c0-0.55-0.06-1.09-0.14-1.62c-0.86,1.33-2.34,2.22-4.04,2.22c-2.67,0-4.83-2.16-4.83-4.83c0-1.7,0.89-3.18,2.22-4.04 C12.61,2.06,12.31,2,12,2L12,2z"/></path></svg>
-                            <span class="sp-item-label">深色模式</span>
-                            <span class="sp-item-value" id="spThemeDarkVal"></span>
-                            <svg class="sp-item-check" viewBox="0 0 24 24" fill="currentColor" id="spThemeDarkCheck"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        </div>
-                        <div class="sp-item" onclick="setTheme('light')">
-                            <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0c-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0c-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0c.39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></path></svg>
-                            <span class="sp-item-label">浅色模式</span>
-                            <span class="sp-item-value" id="spThemeLightVal"></span>
-                            <svg class="sp-item-check" viewBox="0 0 24 24" fill="currentColor" id="spThemeLightCheck"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-                        </div>
-                    </div>
-                    <div class="sp-category">
-                        <div class="sp-category-title">通知</div>
-                        <div class="sp-item" onclick="navigateTo('soundSettings')">
-                            <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></path></svg>
-                            <span class="sp-item-label">消息提示音</span>
-                            <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    <!-- 外观 -->
+                    <div class="sp-group">
+                        <div class="sp-group-title">外观</div>
+                        <div class="sp-card">
+                            <div class="sp-item" onclick="setTheme('dark')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.14,3.36,7.5,7.5,7.5c0.68,0,1.35-0.09,1.99-0.27C17.45,17.34,15.29,19,12.75,19c-3.43,0-6.25-2.82-6.25-6.25C6.5,9.08,7.66,6.88,9.37,5.51M12,2c-5.52,0-10,4.48-10,10s4.48,10,10,10s10-4.48,10-10c0-0.55-0.06-1.09-0.14-1.62c-0.86,1.33-2.34,2.22-4.04,2.22c-2.67,0-4.83-2.16-4.83-4.83c0-1.7,0.89-3.18,2.22-4.04C12.61,2.06,12.31,2,12,2L12,2z"/></path></svg>
+                                <span class="sp-item-label">深色模式</span>
+                                <span class="sp-item-value" id="spThemeDarkVal"></span>
+                                <svg class="sp-item-check" viewBox="0 0 24 24" fill="currentColor" id="spThemeDarkCheck"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="setTheme('light')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0c-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0c-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0c.39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></path></svg>
+                                <span class="sp-item-label">浅色模式</span>
+                                <span class="sp-item-value" id="spThemeLightVal"></span>
+                                <svg class="sp-item-check" viewBox="0 0 24 24" fill="currentColor" id="spThemeLightCheck"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                            </div>
                         </div>
                     </div>
-                    <div class="sp-category">
-                        <div class="sp-category-title">隐私</div>
-                        <div class="sp-item" onclick="navigateTo('blacklist')">
-                            <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6 0 1.66.68 3.16 1.76 4.24l8.48-8.48C15.16 6.68 13.66 6 12 6zm0 12c3.31 0 6-2.69 6-6 0-1.66-.68-3.16-1.76-4.24l-8.48 8.48C8.84 17.32 10.34 18 12 18z"/></path></svg>
-                            <span class="sp-item-label">黑名单管理</span>
-                            <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    <!-- 通知与隐私 -->
+                    <div class="sp-group">
+                        <div class="sp-group-title">通知与隐私</div>
+                        <div class="sp-card">
+                            <div class="sp-item" onclick="navigateTo('soundSettings')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></path></svg>
+                                <span class="sp-item-label">消息提示音</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="navigateTo('blacklist')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6 0 1.66.68 3.16 1.76 4.24l8.48-8.48C15.16 6.68 13.66 6 12 6zm0 12c3.31 0 6-2.69 6-6 0-1.66-.68-3.16-1.76-4.24l-8.48 8.48C8.84 17.32 10.34 18 12 18z"/></path></svg>
+                                <span class="sp-item-label">黑名单管理</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
                         </div>
                     </div>
-                    <div class="sp-category">
-                        <div class="sp-category-title">其他</div>
-                        <div class="sp-item" onclick="navigateTo('about')">
-                            <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></path></svg>
-                            <span class="sp-item-label">关于</span>
-                            <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    <!-- 管理员功能 -->
+                    <div class="sp-group" id="settingsAdminGroup" style="display:none;">
+                        <div class="sp-group-title">管理员</div>
+                        <div class="sp-card">
+                            <div class="sp-item" onclick="navigateTo('cloudControl')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></path></svg>
+                                <span class="sp-item-label">云控管理</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="navigateTo('bannedUsers')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6 0 1.66.68 3.16 1.76 4.24l8.48-8.48C15.16 6.68 13.66 6 12 6zm0 12c3.31 0 6-2.69 6-6 0-1.66-.68-3.16-1.76-4.24l-8.48 8.48C8.84 17.32 10.34 18 12 18z"/></path></svg>
+                                <span class="sp-item-label">已封禁用户</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="navigateTo('allUsers')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></path></svg>
+                                <span class="sp-item-label">用户列表</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="navigateTo('stats')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></path></svg>
+                                <span class="sp-item-label">数据统计</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                            <div class="sp-item" onclick="navigateTo('clearMessages')">
+                                <svg class="sp-item-icon danger" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></path></svg>
+                                <span class="sp-item-label danger">清空公共消息</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 关于 -->
+                    <div class="sp-group">
+                        <div class="sp-group-title">其他</div>
+                        <div class="sp-card">
+                            <div class="sp-item" onclick="navigateTo('about')">
+                                <svg class="sp-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></path></svg>
+                                <span class="sp-item-label">关于</span>
+                                <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3202,22 +3416,26 @@
                     </div>
                 </div>
                 <div class="sp-body" id="soundSettingsBody">
-                    <div class="sp-category">
-                        <div class="sp-category-title">提醒开关</div>
-                        <div class="ms-toggle-row" id="soundTogglePrivate">
-                            <svg class="ms-toggle-icon" viewBox="0 0 24 24" id="soundPrivateIcon"><path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/></svg>
-                            <span>私聊上下线提醒</span>
-                            <label class="md-switch"><input type="checkbox" id="swPrivateNotify" checked onchange="toggleSoundEnabled('privateNotify', this.checked)"><span class="md-switch-track"></span><span class="md-switch-thumb"></span></label>
+                    <div class="sp-group">
+                        <div class="sp-group-title">提醒开关</div>
+                        <div class="sp-card">
+                            <div class="sp-item" id="soundTogglePrivate">
+                            <svg class="sp-item-icon" viewBox="0 0 24 24" id="soundPrivateIcon"><path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/></svg>
+                            <span class="sp-item-label">私聊上下线提醒</span>
+                            <label class="md-switch"><input type="checkbox" id="swPrivateNotify" checked onchange="toggleSoundEnabled('privateNotify', this.checked)"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
+                            </div>
+                            <div class="sp-item" id="soundToggleNewMsg">
+                            <svg class="sp-item-icon" viewBox="0 0 24 24" id="soundNewMsgIcon"><path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/></svg>
+                            <span class="sp-item-label">新消息铃声提醒</span>
+                            <label class="md-switch"><input type="checkbox" id="swNewMsgNotify" checked onchange="toggleSoundEnabled('newMsgNotify', this.checked)"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
                         </div>
-                        <div class="ms-toggle-row" id="soundToggleNewMsg">
-                            <svg class="ms-toggle-icon" viewBox="0 0 24 24" id="soundNewMsgIcon"><path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/></svg>
-                            <span>新消息铃声提醒</span>
-                            <label class="md-switch"><input type="checkbox" id="swNewMsgNotify" checked onchange="toggleSoundEnabled('newMsgNotify', this.checked)"><span class="md-switch-track"></span><span class="md-switch-thumb"></span></label>
                         </div>
                     </div>
-                    <div class="sp-category">
-                        <div class="sp-category-title">铃声选择</div>
-                        <div class="ms-sound-list" id="soundListNewMsg" style="display:none;"></div>
+                    <div class="sp-group">
+                        <div class="sp-group-title">铃声选择</div>
+                        <div class="sp-card">
+                            <div class="ms-sound-list" id="soundListNewMsg" style="display:none;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3231,16 +3449,16 @@
                     </div>
                 </div>
                 <div class="sp-body">
-                    <div class="sp-category">
-                        <div class="sp-category-title">已屏蔽的用户</div>
-                        <div id="settingsBlacklistContainer" style="display:flex;flex-direction:column;gap:4px;">
+                    <div class="sp-group">
+                        <div class="sp-group-title">已屏蔽的用户</div>
+                        <div class="sp-card" id="settingsBlacklistContainer" style="display:flex;flex-direction:column;gap:0;">
                             <div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:16px;">加载中...</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- v055: About Page -->
+            <!-- v058: About Page - iOS Style -->
             <div class="page about-page" id="aboutPage">
                 <div class="app-bar ap-header">
                     <div class="title-block">
@@ -3252,7 +3470,7 @@
                     <div class="about-hero">
                         <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PGNpcmNsZSBjeD0iNjAiIGN5PSI2MCIgcj0iNjAiIGZpbGw9IiM0QTlFRkYiLz48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg0NCw0NCkgc2NhbGUoMS4zMzMpIj48cGF0aCBkPSJNMjEgNmgtMnY5SDZ2MmMwIC41NS40NSAxIDEgMWgxMWw0IDRWN2MwLS41NS0uNDUtMS0xLTF6bS00IDZWM2MwLS41NS0uNDUtMS0xLTFIM2MtLjU1IDAtMSAuNDUtMSAxdjE0bDQtNGgxMGMuNTUgMCAxLS40NSAxLTF6IiBmaWxsPSIjRkZGRkZGIi8+PC9nPjwvc3ZnPg==" alt="MJChat Logo" draggable="false" oncontextmenu="return false;">
                         <div class="app-name">MJChat</div>
-                        <div class="app-version">版本 1.5.1</div>
+                        <div class="app-version">版本 1.5.2</div>
                     </div>
                     <div class="about-card">
                         <a class="about-item" href="https://github.com/manjuanall" target="_blank" rel="noopener">
@@ -3261,10 +3479,142 @@
                                 <div class="about-item-label">在 GitHub 上关注我</div>
                                 <div class="about-item-sub">ManJuanAll</div>
                             </div>
-                            <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                            <svg class="sp-item-chevron" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 6.71a1 1 0 0 0 0 1.41L13.17 12l-3.88 3.88a1 1 0 1 0 1.41 1.41l4.59-4.59a1 1 0 0 0 0-1.41L10.7 6.7a1 1 0 0 0-1.41 0z"/></svg>
                         </a>
                     </div>
                     <div class="about-footer">本项目基于 AGPL-3.0 协议开源</div>
+                </div>
+            </div>
+
+            <!-- v058: Cloud Control Page -->
+            <div class="page admin-page" id="cloudControlPage">
+                <div class="app-bar ap-header">
+                    <div class="title-block">
+                        <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                        <span class="title">云控管理</span>
+                    </div>
+                </div>
+                <div class="ap-body" id="cloudControlBody">
+                    <div class="cc-section">
+                        <div class="cc-section-title">强制下线</div>
+                        <div class="cc-card">
+                            <div class="cc-row" style="flex-direction:column;align-items:stretch;">
+                                <button class="admin-btn-sm danger" style="width:100%;padding:10px;margin-bottom:6px;background:#FF453A;color:#fff;border-radius:8px;font-size:0.85rem;" onclick="forceLogoutAllUsers()">一键下线所有在线用户（除自己）</button>
+                                <button class="admin-btn-sm" style="width:100%;padding:10px;background:var(--md-surface-6dp);color:var(--md-primary);border-radius:8px;font-size:0.82rem;" onclick="resetForceLogout()">解除强制下线（允许用户重新登录）</button>
+                                <div class="cc-desc">一键下线后，仅当前在线用户会被踢出。离线用户不受影响。点击「解除」后恢复默认状态。</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cc-section">
+                        <div class="cc-section-title">登录/注册页公告</div>
+                        <div class="cc-card">
+                            <div class="cc-row">
+                                <span class="cc-row-label">显示公告模态框</span>
+                                <label class="md-switch"><input type="checkbox" id="ccBannerEnabled" onchange="saveCloudControl()"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
+                            </div>
+                            <input type="text" class="cc-input" id="ccBannerTitle" placeholder="公告标题（如：系统维护通知）">
+                            <textarea class="cc-textarea" id="ccBannerMessage" placeholder="公告内容..."></textarea>
+                            <div class="cc-row">
+                                <span class="cc-row-label">允许用户关闭公告</span>
+                                <label class="md-switch"><input type="checkbox" id="ccBannerShowClose" checked onchange="saveCloudControl()"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cc-section">
+                        <div class="cc-section-title">禁止登录</div>
+                        <div class="cc-card">
+                            <div class="cc-row">
+                                <span class="cc-row-label">禁止非管理员登录</span>
+                                <label class="md-switch"><input type="checkbox" id="ccLoginBlocked" onchange="saveCloudControl()"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
+                            </div>
+                            <div class="cc-desc">开启后，后端将拒绝所有非管理员的登录请求。管理员仍可正常登录。可通过10次点击公告模态框输入密码进入管理员登录。</div>
+                        </div>
+                    </div>
+                    <div class="cc-section">
+                        <div class="cc-section-title">群聊设置</div>
+                        <div class="cc-card">
+                            <div class="cc-row">
+                                <span class="cc-row-label">进出群系统消息</span>
+                                <label class="md-switch"><input type="checkbox" id="ccJoinLeaveSystemMsgs" checked onchange="saveCloudControl()"><span class="md-switch-track" style="background:rgba(120,120,128,0.32);"></span><span class="md-switch-thumb"></span></label>
+                            </div>
+                            <div class="cc-desc">开启后，system 账号将正常发送用户进出群聊的系统消息。关闭后则不发送。</div>
+                        </div>
+                    </div>
+                    <button class="cc-save-btn" onclick="saveCloudControl()">保存设置</button>
+                    <div class="cc-status" id="cloudControlStatus"></div>
+                </div>
+            </div>
+
+            <!-- v058: Banned Users Page -->
+            <div class="page admin-page" id="bannedUsersPage">
+                <div class="app-bar ap-header">
+                    <div class="title-block">
+                        <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                        <span class="title">已封禁用户</span>
+                    </div>
+                </div>
+                <div class="ap-body">
+                    <div class="sp-group">
+                        <div class="sp-group-title">封禁列表</div>
+                        <div class="sp-card" id="bannedUsersContainer">
+                            <div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v058: All Users Page -->
+            <div class="page admin-page" id="allUsersPage">
+                <div class="app-bar ap-header">
+                    <div class="title-block">
+                        <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                        <span class="title">用户列表</span>
+                    </div>
+                </div>
+                <div class="ap-body">
+                    <div class="sp-group">
+                        <div class="sp-group-title">所有用户</div>
+                        <div class="sp-card" id="allUsersContainer">
+                            <div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v058: Stats Page -->
+            <div class="page admin-page" id="statsPage">
+                <div class="app-bar ap-header">
+                    <div class="title-block">
+                        <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                        <span class="title">数据统计</span>
+                    </div>
+                </div>
+                <div class="ap-body">
+                    <div class="sp-group">
+                        <div class="sp-group-title">统计数据</div>
+                        <div class="sp-card" id="statsContainer">
+                            <div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- v058: Clear Messages Page -->
+            <div class="page admin-page" id="clearMessagesPage">
+                <div class="app-bar ap-header">
+                    <div class="title-block">
+                        <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                        <span class="title">清空公共消息</span>
+                    </div>
+                </div>
+                <div class="ap-body">
+                    <div class="sp-group">
+                        <div class="sp-group-title">危险操作</div>
+                        <div class="sp-card" style="padding:20px;">
+                            <div style="font-size:0.9rem;color:var(--md-on-surface);margin-bottom:16px;line-height:1.6;">确定要清空所有公共消息吗？此操作不可撤销。</div>
+                            <button class="admin-btn-sm danger" style="width:100%;padding:13px;background:#FF453A;color:#fff;border-radius:10px;font-size:0.95rem;font-weight:600;" onclick="doClearMessages()">清空所有消息</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3369,8 +3719,6 @@
                     <li onclick="closeHomeMenu();showProfileDialog();"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>个人信息</li>
                     <li onclick="closeHomeMenu();navigateTo('search');"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>搜索用户</li>
                     <li onclick="closeHomeMenu();navigateTo('settings');"><svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.68,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>设置</li>
-                    <li onclick="closeHomeMenu();navigateTo('about');"><svg viewBox="0 0 24 24"><path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>关于</li>
-                    <li id="homeAdminItem" class="admin-item" style="display:none;" onclick="closeHomeMenu();showAdminDialog();"><svg viewBox="0 0 24 24"><path d="M17,11c0.34,0,0.67,0.04,1,0.09V6.27L10.5,3L3,6.27v4.91c0,4.54,3.2,8.79,7.5,9.82c0.55-0.13,1.08-0.32,1.6-0.55C11.41,19.47,11,18.28,11,17C11,13.69,13.69,11,17,11z"/><path d="M17,13c-2.21,0-4,1.79-4,4c0,2.21,1.79,4,4,4s4-1.79,4-4C21,14.79,19.21,13,17,13z M17,14.38c0.62,0,1.12,0.51,1.12,1.12s-0.51,1.12-1.12,1.12s-1.12-0.51-1.12-1.12S16.38,14.38,17,14.38z M17,19.75c-0.93,0-1.74-0.46-2.24-1.17c0.05-0.72,1.51-1.08,2.24-1.08s2.19,0.36,2.24,1.08C18.74,19.29,17.93,19.75,17,19.75z"/></svg>管理员功能</li>
                 </ul>
             </div>
         </div>
@@ -3380,7 +3728,6 @@
                 <div class="user-info"><div class="avatar-wrap"><div class="user-avatar" id="publicMenuAvatar">U</div><div class="avatar-status-dot" id="publicAvatarDot"></div></div><div class="user-name" id="publicMenuName">用户</div></div>
                 <ul class="menu-list">
                     <li onclick="closePublicMenu();togglePublicMute();"><svg id="publicMuteIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M21,19V20H3V19L5,17V11C5,7.9 7.03,5.17 10,4.29C10,4.19 10,4.1 10,4A2,2 0 0,1 12,2A2,2 0 0,1 14,4C14,4.1 14,4.19 14,4.29C16.97,5.17 19,7.9 19,11V17L21,19M14,21A2,2 0 0,1 12,23A2,2 0 0,1 10,21"/></svg><span id="publicMuteLabel">群聊消息免打扰</span></li>
-                    <li id="publicAdminItem" class="admin-item" style="display:none;" onclick="closePublicMenu();showAdminDialog();"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17,11c0.34,0,0.67,0.04,1,0.09V6.27L10.5,3L3,6.27v4.91c0,4.54,3.2,8.79,7.5,9.82c0.55-0.13,1.08-0.32,1.6-0.55C11.41,19.47,11,18.28,11,17C11,13.69,13.69,11,17,11z"/><path d="M17,13c-2.21,0-4,1.79-4,4c0,2.21,1.79,4,4,4s4-1.79,4-4C21,14.79,19.21,13,17,13z"/></svg>管理员功能</li>
                     <li onclick="closePublicMenu();showAgentList();"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zm-2 10H6V7h12v12zM10 13c.83 0 1.5-.67 1.5-1.5S10.83 10 10 10s-1.5.67-1.5 1.5S9.17 13 10 13z"/></svg>智能体</li>
                 </ul>
             </div>
@@ -3434,91 +3781,7 @@
             </div>
         </div>
 
-        <div class="dialog-overlay hidden" id="adminDialog" onclick="if(event.target===this)closeAdminDialog()">
-            <div class="md-dialog admin-dialog-card">
-                <div class="admin-dialog-header">
-                    <h2>管理员功能</h2>
-                    <button class="admin-close-btn" onclick="closeAdminDialog()"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
-                </div>
-                <div class="admin-action-list">
-                    <div class="admin-action-item" onclick="closeAdminDialog();showClearDialog();">
-                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        <span>清空公共消息</span>
-                    </div>
-                    <div class="admin-action-item" onclick="closeAdminDialog();showBannedList();">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-3.31 0-6 2.69-6 6 0 1.66.68 3.16 1.76 4.24l8.48-8.48C15.16 6.68 13.66 6 12 6zm0 12c3.31 0 6-2.69 6-6 0-1.66-.68-3.16-1.76-4.24l-8.48 8.48C8.84 17.32 10.34 18 12 18z"/></svg>
-                        <span>已封禁用户</span>
-                    </div>
-                    <div class="admin-action-item" onclick="closeAdminDialog();showAllUsers();">
-                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                        <span>MJChat 用户</span>
-                    </div>
-                    <div class="admin-action-item" onclick="closeAdminDialog();showStats();">
-                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-                        <span>数据统计</span>
-                    </div>
-                    <div class="admin-action-item" onclick="closeAdminDialog();showCloudControl();">
-                        <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.25 1.26 1.27.06c1.48.07 2.59 1.28 2.59 2.75 0 1.49-1.2 2.5-2.5 2.5z"/></svg>
-                        <span>云控管理</span>
-                    </div>
-                </div>
-                <div class="dialog-actions" style="margin-top:16px;"><button class="md-button text" onclick="closeAdminDialog()">关闭</button></div>
-            </div>
-        </div>
-
-        <!-- 云控管理对话框 -->
-        <div class="dialog-overlay hidden" id="cloudControlDialog" onclick="if(event.target===this)closeCloudControl()">
-            <div class="md-dialog" style="max-width:500px;width:90vw;max-height:85vh;overflow-y:auto;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h2>云控管理</h2>
-                    <button onclick="closeCloudControl()" style="background:none;border:none;color:var(--md-on-surface);font-size:1.5rem;cursor:pointer;padding:4px;">✕</button>
-                </div>
-
-                <div style="margin-bottom:20px;">
-                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">强制下线</h3>
-                    <button class="md-button primary" onclick="forceLogoutAllUsers()" style="width:100%;background:var(--md-error);color:#fff;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;margin-bottom:8px;">一键下线所有在线用户（除自己）</button>
-                    <button class="md-button primary" onclick="resetForceLogout()" style="width:100%;background:var(--md-surface-4dp);color:var(--md-on-surface);padding:10px;border:none;border-radius:8px;font-size:0.8125rem;cursor:pointer;margin-bottom:8px;border:1px solid var(--md-outline);">解除强制下线（允许用户重新登录）</button>
-                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">一键下线后，仅当前在线用户会被踢出。离线用户不受影响。点击「解除」后恢复默认状态。</p>
-                </div>
-
-                <div style="margin-bottom:20px;">
-                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">登录/注册页公告</h3>
-                    <label style="display:flex;align-items:center;margin-bottom:12px;cursor:pointer;">
-                        <input type="checkbox" id="ccBannerEnabled" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-primary);">
-                        <span style="font-size:0.875rem;">显示公告模态框</span>
-                    </label>
-                    <input type="text" id="ccBannerTitle" placeholder="公告标题（如：系统维护通知）" style="width:100%;padding:10px 12px;background:var(--md-surface-4dp);border:1px solid var(--md-outline);border-radius:8px;color:var(--md-on-surface);font-size:0.875rem;margin-bottom:8px;box-sizing:border-box;">
-                    <textarea id="ccBannerMessage" placeholder="公告内容..." style="width:100%;padding:10px 12px;background:var(--md-surface-4dp);border:1px solid var(--md-outline);border-radius:8px;color:var(--md-on-surface);font-size:0.875rem;margin-bottom:8px;min-height:80px;resize:vertical;box-sizing:border-box;"></textarea>
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" id="ccBannerShowClose" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-primary);">
-                        <span style="font-size:0.875rem;">允许用户关闭公告</span>
-                    </label>
-                </div>
-
-                <div style="margin-bottom:20px;">
-                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">禁止登录</h3>
-                    <label style="display:flex;align-items:center;margin-bottom:8px;cursor:pointer;">
-                        <input type="checkbox" id="ccLoginBlocked" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-error);">
-                        <span style="font-size:0.875rem;">禁止非管理员登录（配合公告使用效果更佳）</span>
-                    </label>
-                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">开启后，后端将拒绝所有非管理员的登录请求。管理员仍可正常登录。可通过10次点击公告模态框输入密码进入管理员登录。</p>
-                </div>
-
-                <!-- v046: 群聊设置 -->
-                <div style="margin-bottom:20px;">
-                    <h3 style="font-size:0.9rem;color:var(--md-on-surface-muted);margin-bottom:8px;">群聊设置</h3>
-                    <label style="display:flex;align-items:center;margin-bottom:8px;cursor:pointer;">
-                        <input type="checkbox" id="ccJoinLeaveSystemMsgs" style="margin-right:8px;width:18px;height:18px;accent-color:var(--md-primary);">
-                        <span style="font-size:0.875rem;">进出群系统消息</span>
-                    </label>
-                    <p style="font-size:0.75rem;color:var(--md-on-surface-dim);">开启后，system 账号将正常发送用户进出群聊的系统消息。关闭后则不发送。</p>
-                </div>
-
-                <button class="md-button primary" onclick="saveCloudControl()" style="width:100%;padding:12px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;background:var(--md-primary);color:#fff;margin-bottom:8px;">保存设置</button>
-                <p id="cloudControlStatus" style="font-size:0.75rem;color:var(--md-on-surface-dim);text-align:center;"></p>
-            </div>
-        </div>
-
+        <!-- v058: Old admin/cloudControl dialogs removed - now using pages -->
         <!-- 登录/注册页公告模态框 (v036: 支持10次点击管理员入口) -->
         <div class="dialog-overlay hidden" id="authBannerModal" style="z-index:9999;" data-banner-enabled="false">
             <div class="md-dialog" id="authBannerDialogContent" style="max-width:400px;width:90vw;position:relative;">
@@ -3550,42 +3813,7 @@
             </div>
         </div>
 
-        <div class="dialog-overlay hidden" id="allUsersModal" onclick="if(event.target===this)closeAllUsersModal()">
-            <div class="md-dialog" style="max-width:420px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <h2>所有用户</h2>
-                    <button onclick="closeAllUsersModal()" style="background:none;border:none;color:var(--md-on-surface);font-size:1.5rem;cursor:pointer;">✕</button>
-                </div>
-                <div style="max-height:60vh;overflow-y:auto;margin-top:12px;" id="allUsersList">
-                </div>
-            </div>
-        </div>
-
-        <div class="dialog-overlay hidden" id="statsModal" onclick="if(event.target===this)closeStatsModal()">
-            <div class="md-dialog" style="max-width:400px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <h2>数据统计</h2>
-                    <button onclick="closeStatsModal()" style="background:none;border:none;color:var(--md-on-surface);font-size:1.5rem;cursor:pointer;">✕</button>
-                </div>
-                <div id="statsContent" style="margin-top:12px;line-height:2;">
-                </div>
-            </div>
-        </div>
-
-        <div class="dialog-overlay hidden" id="clearDialog" onclick="if(event.target===this)hideClearDialog()">
-            <div class="md-dialog">
-                <h2>清空公共消息</h2>
-                <p>确定要清空所有公共消息吗？此操作不可撤销。</p>
-                <div class="dialog-actions"><button class="md-button text" onclick="hideClearDialog()">取消</button><button class="md-button text" style="color:var(--md-error);" onclick="clearPublicMessages()">清空</button></div>
-            </div>
-        </div>
-
-        <div class="dialog-overlay hidden banned-list-modal" id="bannedListModal" onclick="if(event.target===this)closeBannedList()">
-            <div class="md-dialog">
-                <div style="display:flex;justify-content:space-between;align-items:center;"><h2>已封禁用户</h2><button onclick="closeBannedList()" style="background:none;border:none;color:var(--md-on-surface);font-size:1.5rem;cursor:pointer;">✕</button></div>
-                <div class="banned-list" id="bannedListContainer"></div>
-            </div>
-        </div>
+        <!-- v058: Old allUsersModal, statsModal, clearDialog, bannedListModal removed - now using pages -->
 
         <div class="dialog-overlay hidden" id="linkDialog" onclick="if(event.target===this)hideLinkDialog()">
             <div class="md-dialog">
@@ -3632,15 +3860,19 @@
         .settings-radio-check:empty { display:none; }
         .settings-radio-check svg { width:20px;height:20px; }
         /* v053: MD2 style sound settings */
-        .ms-toggle-row { display:flex;align-items:center;gap:12px;padding:10px 4px;font-size:0.875rem;color:var(--md-on-surface); }
-        .ms-toggle-icon { width:20px;height:20px;flex-shrink:0;fill:var(--md-on-surface); }
-        .ms-sound-list { display:flex;flex-direction:column;gap:2px;padding-left:32px; }
-        .ms-sound-item { display:flex;align-items:center;gap:12px;padding:8px 6px;cursor:pointer;border-radius:8px;transition:background 0.15s;font-size:0.8125rem;color:var(--md-on-surface); }
-        .ms-sound-item:hover { background:var(--md-ripple); }
-        .ms-sound-item.is-selected { color:var(--md-primary);background:rgba(var(--md-primary-rgb,68,138,255),0.06); }
+        .ms-toggle-row { display:flex;align-items:center;gap:12px;padding:13px 16px;font-size:0.9rem;color:var(--md-on-surface);border-bottom:0.5px solid var(--md-outline);cursor:pointer; }
+        .ms-toggle-row:last-child { border-bottom: none; }
+        .ms-toggle-row:active { background:var(--md-surface-6dp); }
+        .ms-toggle-icon { width:22px;height:22px;flex-shrink:0;fill:var(--md-primary); }
+        .ms-sound-list { display:flex;flex-direction:column;gap:0;padding:0; }
+        .ms-sound-item { display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;font-size:0.9rem;color:var(--md-on-surface);border-bottom:0.5px solid var(--md-outline); }
+        .ms-sound-item:last-child { border-bottom:none; }
+        .ms-sound-item:active { background:var(--md-surface-6dp); }
+        .ms-sound-item .check { width:20px;height:20px;fill:var(--md-primary);flex-shrink:0; }
+        .ms-sound-item.is-selected { color:var(--md-primary); }
         .ms-sound-item .ms-sound-check { width:18px;height:18px;flex-shrink:0;margin-left:auto;margin-right:4px; }
-        .ms-sound-play { margin-left:0;background:none;border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--md-on-surface-muted);flex-shrink:0;transition:background 0.15s,padding 0.15s; }
-        .ms-sound-play:hover { background:var(--md-ripple);color:var(--md-on-surface); }
+        .ms-sound-play { margin-left:0;background:none;border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--md-on-surface-dim);flex-shrink:0;transition:background 0.15s,padding 0.15s; }
+        .ms-sound-play:hover { background:var(--md-surface-6dp);color:var(--md-on-surface); }
         .ms-sound-play .ms-btn-icon { width:18px;height:18px;fill:currentColor; }
         .ms-sound-play .md-circular-loader { display:none;width:22px;height:22px;flex-shrink:0; }
         .ms-sound-play.is-loading .ms-btn-icon { display:none !important; }
@@ -3738,7 +3970,7 @@
         const STORAGE_BUCKET = 'chat-images';
         const CHANNEL_PUBLIC = 'chat-room-md';
         const HISTORY_LIMIT = 200;
-        const APP_VERSION = 57; // MJChat v057
+        const APP_VERSION = 58; // MJChat v058
         const CC_BANNER_TITLE = '系统维护';
         const CC_BANNER_MSG = '系统正在维护中，暂时无法登录。请联系管理员解除维护状态。';
         const SALT = 'mjchat_2026_salt_v1';
@@ -3856,17 +4088,7 @@
         ]; // 上线固定 Into.mp3；下线固定 Out.mp3
         // v053: 固定上下线铃声文件名（不可用户选择，仅供内部固定调用 + localStorage 缓存复用）
         const _FIXED_SOUND_FILES = { '__online__': 'Into.mp3', '__offline__': 'Out.mp3' };
-        // v053: 页面初始化时即从 localStorage 读取上次的用户设置，预置默认铃声 ID（一加载就可在本地命中缓存）
-        (function _seedSoundDefaults() {
-            try {
-                var _lsSett = localStorage.getItem('mjchat_settings');
-                if (_lsSett) {
-                    var _pset = JSON.parse(_lsSett);
-                    if (_pset.soundNewMsg) _soundNewMsgId = _pset.soundNewMsg;
-                    if (_pset.soundPrivate) _soundPrivateId = _pset.soundPrivate;
-                }
-            } catch (e) { /* ignore */ }
-        })();
+        // v059: 设置项纯云端, 不再从 localStorage 预载铃声设置 (loadUserSettings 会从云端拉取)
         var _notifyAudio = null; // v053: 播放铃声复用的 Audio 实例（解决短时间内多次 new Audio 被浏览器节流不响的问题）
         function getNotifyAudio() {
             if (!_notifyAudio) { _notifyAudio = new Audio(); _notifyAudio.preload = 'auto'; }
@@ -6624,6 +6846,7 @@
 
                 // Server-side AI call - API keys NEVER reach the client
                 let response = null;
+                let llmErrorMsg = null;
                 try {
                     const { data: llmData, error: llmError } = await sb.rpc('call_agent_llm_rate_limited', {
                         p_agent_id: agent.id,
@@ -6631,14 +6854,53 @@
                         p_caller: currentUser,
                         p_session_token: getSessionToken()
                     });
-                    if (!llmError && llmData && llmData.success) {
+                    if (llmError) {
+                        console.error('[AI] call_agent_llm_rate_limited error:', llmError);
+                        // 回退: 直接调用 call_agent_llm
+                        try {
+                            const { data: llmData2, error: llmError2 } = await sb.rpc('call_agent_llm', {
+                                p_agent_id: agent.id,
+                                p_user_message: cleanMsg,
+                                p_caller: currentUser,
+                                p_session_token: getSessionToken()
+                            });
+                            if (!llmError2 && llmData2 && llmData2.success) {
+                                response = llmData2.response;
+                            } else if (llmData2 && llmData2.message) {
+                                llmErrorMsg = llmData2.message;
+                            }
+                        } catch (e2) {
+                            console.error('[AI] call_agent_llm fallback error:', e2);
+                        }
+                    } else if (llmData && llmData.success) {
                         response = llmData.response;
                     } else if (llmData && llmData.message) {
-                        showSnackbar(llmData.message);
-                        return;
+                        llmErrorMsg = llmData.message;
                     }
-                } catch (e) { /* RPC error */ }
+                } catch (e) {
+                    console.error('[AI] RPC exception:', e);
+                    // 回退: 直接调用 call_agent_llm
+                    try {
+                        const { data: llmData3, error: llmError3 } = await sb.rpc('call_agent_llm', {
+                            p_agent_id: agent.id,
+                            p_user_message: cleanMsg,
+                            p_caller: currentUser,
+                            p_session_token: getSessionToken()
+                        });
+                        if (!llmError3 && llmData3 && llmData3.success) {
+                            response = llmData3.response;
+                        } else if (llmData3 && llmData3.message) {
+                            llmErrorMsg = llmData3.message;
+                        }
+                    } catch (e3) {
+                        console.error('[AI] call_agent_llm fallback exception:', e3);
+                    }
+                }
 
+                if (llmErrorMsg) {
+                    showSnackbar(llmErrorMsg);
+                    return;
+                }
                 if (!response) {
                     showSnackbar(`智能体 ${agent.name} 暂时无法回复`);
                     return;
@@ -6653,6 +6915,7 @@
                 }
 
                 let sent = false;
+                let sendErrorMsg = null;
                 try {
                     const { data: rpcData, error: rpcError } = await sb.rpc('send_agent_message', {
                         p_agent_name: agent.name,
@@ -6662,10 +6925,16 @@
                         p_caller: currentUser,
                         p_session_token: getSessionToken()
                     });
-                    if (!rpcError && rpcData && rpcData.success !== false) {
+                    if (rpcError) {
+                        console.error('[AI] send_agent_message error:', rpcError);
+                        sendErrorMsg = rpcError.message || '发送失败';
+                    } else if (rpcData && rpcData.success !== false) {
                         sent = true;
                     }
-                } catch (e) { /* RPC fallback */ }
+                } catch (e) {
+                    console.error('[AI] send_agent_message exception:', e);
+                    sendErrorMsg = e.message || '发送异常';
+                }
                 if (!sent) {
                     await ensureAgentUserAccount(agent.name);
                     try {
@@ -6677,10 +6946,49 @@
                             p_caller: currentUser,
                             p_session_token: getSessionToken()
                         });
-                        if (!rpcError2 && rpcData2 && rpcData2.success !== false) sent = true;
-                    } catch (e2) { /* give up */ }
+                        if (rpcError2) {
+                            console.error('[AI] send_agent_message retry error:', rpcError2);
+                        } else if (rpcData2 && rpcData2.success !== false) {
+                            sent = true;
+                        }
+                    } catch (e2) {
+                        console.error('[AI] send_agent_message retry exception:', e2);
+                    }
                 }
-            } catch (e) { /* ignore */ }
+                // 最终回退: 直接插入消息表
+                if (!sent) {
+                    console.warn('[AI] RPC failed, trying direct table insert');
+                    try {
+                        const { error: insError } = await sb.from('chat_messages').insert({
+                            sender: agent.name,
+                            text: response,
+                            msg_version: 24,
+                            is_system: false,
+                            reply_to_id: replyToId,
+                            reply_content: replyContent
+                        });
+                        if (!insError) {
+                            sent = true;
+                        } else {
+                            // 尝试 public_messages 表
+                            const { error: insError2 } = await sb.from('public_messages').insert({
+                                username: agent.name,
+                                text: response,
+                                is_system: false,
+                                msg_version: 24
+                            });
+                            if (!insError2) sent = true;
+                        }
+                    } catch (e3) {
+                        console.error('[AI] direct insert failed:', e3);
+                    }
+                }
+                if (!sent) {
+                    showSnackbar(`智能体 ${agent.name} 回复发送失败`);
+                }
+            } catch (e) {
+                console.error('[AI] triggerAgentResponse error:', e);
+            }
         }
 
         async function ensureAgentUserAccount(agentName) {
@@ -9231,58 +9539,13 @@
             }
         }
 
-        async function showAllUsers() {
-            document.getElementById('allUsersModal').classList.remove('hidden');
-            try {
-                let users = null;
-                // v048: 使用 callRPC 包装
-                var allRes = await callRPC('get_all_users', {}, async function(){
-                    try {
-                        var r = await sb.from('users').select('username,role,banned,avatar_url,created_at').order('created_at', { ascending: true });
-                        return (r && !r.error && r.data) ? r.data : null;
-                    } catch(e2){ return null; }
-                });
-                if (!allRes.error && allRes.data) { users = allRes.data; }
-                if (!users) {
-                    var errMsg = (allRes.error && allRes.error.message) ? allRes.error.message : '请检查网络';
-                    document.getElementById('allUsersList').innerHTML = '<p>加载失败：' + escapeHtml(errMsg) + '</p>';
-                    return;
-                }
-                if (!users || users.length === 0) {
-                    document.getElementById('allUsersList').innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无用户</p>';
-                    return;
-                }
-                let html = '';
-                users.forEach(u => {
-                    const idx = hashStr(u.username) % 8;
-                    let avatarStyle = '';
-                    if (u.avatar_url) {
-                        avatarStyle = `background-image:url(${u.avatar_url});background-size:cover;background-position:center;`;
-                    }
-                    const isBanned = u.banned ? '🚫' : '✅';
-                    const roleIcon = u.role === 'admin' ? '👑' : '👤';
-                    html += `
-                        <div style="display:flex;align-items:center;padding:8px 4px;border-bottom:1px solid var(--md-outline);gap:8px;">
-                            <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;color:white;flex-shrink:0;${avatarStyle}" class="av-${idx}">${u.avatar_url ? '' : u.username.charAt(0).toUpperCase()}</div>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-weight:500;font-size:0.875rem;">${escapeHtml(u.username)}</div>
-                                <div style="font-size:0.7rem;color:var(--md-on-surface-dim);display:flex;gap:6px;flex-wrap:wrap;">
-                                    <span>${roleIcon} ${escapeHtml(u.role || 'user')}</span>
-                                    <span>${isBanned}</span>
-                                </div>
-                            </div>
-                            <button class="md-button text" style="padding:2px 12px;height:28px;font-size:0.7rem;text-transform:none;background:var(--md-primary);color:var(--md-on-primary);border-radius:4px;" onclick="simulateLogin('${escapeAttr(u.username)}')">登录</button>
-                        </div>
-                    `;
-                });
-                document.getElementById('allUsersList').innerHTML = html;
-            } catch (e) {
-                document.getElementById('allUsersList').innerHTML = '<p>加载失败</p>';
-            }
+        // v058: showAllUsers now redirects to page
+        function showAllUsers() {
+            navigateTo('allUsers');
         }
 
         function closeAllUsersModal() {
-            document.getElementById('allUsersModal').classList.add('hidden');
+            // v058: no-op, using pages now
         }
 
         async function simulateLogin(username) {
@@ -9329,7 +9592,7 @@
                     _admin_original: currentUser
                 }));
                 showSnackbar(`已切换至 ${username}`);
-                closeAllUsersModal();
+                navigateBack();
                 isEntered = false;
                 publicMessages = [];
                 privateMessages = [];
@@ -9350,93 +9613,29 @@
             }
         }
 
-        async function showStats() {
-            document.getElementById('statsModal').classList.remove('hidden');
-            try {
-                let rpcData = null;
-                try {
-                    const { data, error: rpcError } = await sb.rpc('get_stats');
-                    if (!rpcError && data && data.success !== false) { rpcData = data; }
-                } catch (e) { /* RPC error */ }
-                // v042: Fallback to direct queries
-                if (!rpcData) {
-                    try {
-                        const [{ count: msgCount }, { count: todayCount }, { count: userCount }] = await Promise.all([
-                            sb.from('public_messages').select('*', { count: 'exact', head: true }),
-                            sb.from('public_messages').select('*', { count: 'exact', head: true }).gte('created_at', new Date().toISOString().split('T')[0]),
-                            sb.from('users').select('*', { count: 'exact', head: true }).eq('banned', false)
-                        ]);
-                        rpcData = { msg_count: msgCount || 0, today_count: todayCount || 0, user_count: userCount || 0 };
-                    } catch (e2) { /* direct query also failed */ }
-                }
-                if (!rpcData) {
-                    document.getElementById('statsContent').innerHTML = '<p>加载统计失败</p>';
-                    return;
-                }
-                const totalMsgs = rpcData.msg_count || 0;
-                const todayMsgs = rpcData.today_count || 0;
-                const totalUsers = rpcData.user_count || 0;
-                // v043: 修正在线用户数统计 - 基于 presenceState 展开后的去重用户名列表
-                const _onlineNames = (function(){ var r=[]; var v=Object.values(onlineUsers); for(var i=0;i<v.length;i++){var a=v[i]; if(Array.isArray(a)){for(var j=0;j<a.length;j++){if(a[j]&&a[j].name)r.push(a[j].name);}}} return [...new Set(r)]; })();
-                const currentOnline = _onlineNames.length;
-
-                const html = `
-                    <div><strong>群内消息总数：</strong>${totalMsgs}</div>
-                    <div><strong>今日消息数：</strong>${todayMsgs}</div>
-                    <div><strong>当前在线用户数：</strong>${currentOnline}</div>
-                    <div><strong>历史最高在线用户数：</strong>${currentOnline}（需额外存储）</div>
-                    <div><strong>今日最高在线用户数：</strong>${currentOnline}（需额外存储）</div>
-                    <div><strong>有效账号数（不含封禁/注销）：</strong>${totalUsers}</div>
-                    <div style="font-size:0.7rem;color:var(--md-on-surface-dim);margin-top:8px;">注：历史峰值和今日峰值需额外实现存储。</div>
-                `;
-                document.getElementById('statsContent').innerHTML = html;
-            } catch (e) {
-                document.getElementById('statsContent').innerHTML = '<p>加载统计失败</p>';
-            }
+        // v058: showStats now redirects to page
+        function showStats() {
+            navigateTo('stats');
         }
 
         function closeStatsModal() {
-            document.getElementById('statsModal').classList.add('hidden');
+            // v058: no-op, using pages now
         }
 
         /* Removed: showLoginHistory and closeLoginHistoryModal */
 
-        async function showBannedList() {
-            document.getElementById('bannedListModal').classList.remove('hidden');
-            await refreshBannedList();
+        // v058: showBannedList now redirects to page
+        function showBannedList() {
+            navigateTo('bannedUsers');
         }
 
         function closeBannedList() {
-            document.getElementById('bannedListModal').classList.add('hidden');
+            // v058: no-op, using pages now
         }
 
+        // v058: refreshBannedList now delegates to page loader
         async function refreshBannedList() {
-            const container = document.getElementById('bannedListContainer');
-            try {
-                let bannedUsers = null;
-                // v048: 使用 callRPC，过滤 banned=true
-                var banRes = await callRPC('get_all_users', {}, async function(){
-                    try {
-                        var r = await sb.from('users').select('username,role,banned,avatar_url').eq('banned', true);
-                        return (r && !r.error && r.data) ? r.data : null;
-                    } catch(e2){ return null; }
-                });
-                if (!banRes.error && banRes.data) { bannedUsers = banRes.data; }
-                if (!bannedUsers) {
-                    var errMsg = (banRes.error && banRes.error.message) ? banRes.error.message : '请检查网络';
-                    container.innerHTML = '<p>加载失败：' + escapeHtml(errMsg) + '</p>'; return;
-                }
-                if (!bannedUsers || bannedUsers.length === 0) {
-                    container.innerHTML = '<p style="text-align:center;color:var(--md-on-surface-dim);">暂无封禁用户</p>';
-                    return;
-                }
-                container.innerHTML = bannedUsers.map(u =>
-                    `<div class="banned-item">
-                            <span class="name">${escapeHtml(u.username)}</span>
-                            <button class="unban-btn" onclick="unbanUser('${escapeAttr(u.username)}')">解封</button>
-                        </div>`
-                ).join('');
-            } catch (e) { container.innerHTML = '<p>加载失败</p>'; }
+            loadBannedUsersPage();
         }
 
         async function unbanUser(username) {
@@ -9827,12 +10026,191 @@
             closeChangePasswordDialog();
         }
 
+        // v058: Admin functions now render to pages instead of modals
         function showAdminDialog() {
-            document.getElementById('adminDialog').classList.remove('hidden');
+            navigateTo('settings');
         }
 
         function closeAdminDialog() {
-            document.getElementById('adminDialog').classList.add('hidden');
+            // v058: 不再使用模态框
+        }
+
+        // v058: Load banned users into page container (fixes showing all users bug)
+        async function loadBannedUsersPage() {
+            const container = document.getElementById('bannedUsersContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>';
+            try {
+                let bannedUsers = null;
+
+                // v058: 方法1 - 尝试 get_banned_users RPC (只返回封禁用户)
+                try {
+                    var banRpc = await sb.rpc('get_banned_users', {});
+                    if (!banRpc.error && banRpc.data) {
+                        var parsed = banRpc.data;
+                        if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+                        if (parsed && parsed.success !== false && parsed.data) {
+                            bannedUsers = parsed.data;
+                        } else if (Array.isArray(parsed)) {
+                            bannedUsers = parsed;
+                        }
+                    }
+                } catch (e1) { /* RPC not available */ }
+
+                // v058: 方法2 - 尝试 get_all_users RPC + 客户端过滤
+                if (!bannedUsers) {
+                    var banRes = await callRPC('get_all_users', {}, async function(){
+                        try {
+                            var r = await sb.from('users').select('username,role,banned,avatar_url').eq('banned', true);
+                            return (r && !r.error && r.data) ? r.data : null;
+                        } catch(e2){ return null; }
+                    });
+                    if (!banRes.error && banRes.data) {
+                        bannedUsers = banRes.data.filter(function(u) { return u.banned === true; });
+                    }
+                }
+
+                if (!bannedUsers) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载失败</div>';
+                    return;
+                }
+                if (!bannedUsers || bannedUsers.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">暂无封禁用户</div>';
+                    return;
+                }
+                container.innerHTML = bannedUsers.map(function(u) {
+                    var idx = hashStr(u.username) % 8;
+                    var avatarStyle = u.avatar_url ? 'background-image:url(' + u.avatar_url + ');background-size:cover;background-position:center;' : '';
+                    return '<div class="admin-user-row">' +
+                        '<div class="admin-user-avatar av-' + idx + '" style="' + avatarStyle + '">' + (u.avatar_url ? '' : u.username.charAt(0).toUpperCase()) + '</div>' +
+                        '<div class="admin-user-info"><div class="admin-user-name">' + escapeHtml(u.username) + '</div>' +
+                        '<div class="admin-user-meta"><span>已封禁</span></div></div>' +
+                        '<div class="admin-user-actions"><button class="admin-btn-sm" onclick="unbanUserPage(\'' + escapeAttr(u.username) + '\')">解封</button></div>' +
+                        '</div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载失败</div>';
+            }
+        }
+
+        async function unbanUserPage(username) {
+            if (!confirm('确定要解封用户 ' + username + ' 吗？')) return;
+            const isAdm = await verifyAdminSession();
+            if (!isAdm) { showSnackbar('无权限执行此操作'); return; }
+            try {
+                const { data, error } = await sb.rpc('ban_user', {
+                    p_admin: currentUser,
+                    p_target: username,
+                    p_session_token: getSessionToken(),
+                    p_ban: false
+                });
+                if (error || (data && data.success === false)) { showSnackbar('操作失败: ' + (data?.message || error?.message || '')); return; }
+                showSnackbar('已解封 ' + username);
+                loadBannedUsersPage();
+            } catch (e) { showSnackbar('操作失败'); }
+        }
+
+        // v058: Load all users into page container
+        async function loadAllUsersPage() {
+            const container = document.getElementById('allUsersContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>';
+            try {
+                let users = null;
+                var allRes = await callRPC('get_all_users', {}, async function(){
+                    try {
+                        var r = await sb.from('users').select('username,role,banned,avatar_url,created_at').order('created_at', { ascending: true });
+                        return (r && !r.error && r.data) ? r.data : null;
+                    } catch(e2){ return null; }
+                });
+                if (!allRes.error && allRes.data) { users = allRes.data; }
+                if (!users) {
+                    var errMsg = (allRes.error && allRes.error.message) ? allRes.error.message : '请检查网络';
+                    container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载失败：' + escapeHtml(errMsg) + '</div>';
+                    return;
+                }
+                if (!users || users.length === 0) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">暂无用户</div>';
+                    return;
+                }
+                container.innerHTML = users.map(function(u) {
+                    var idx = hashStr(u.username) % 8;
+                    var avatarStyle = u.avatar_url ? 'background-image:url(' + u.avatar_url + ');background-size:cover;background-position:center;' : '';
+                    var isBanned = u.banned ? '已封禁' : '正常';
+                    var roleIcon = u.role === 'admin' ? '管理员' : '用户';
+                    return '<div class="admin-user-row">' +
+                        '<div class="admin-user-avatar av-' + idx + '" style="' + avatarStyle + '">' + (u.avatar_url ? '' : u.username.charAt(0).toUpperCase()) + '</div>' +
+                        '<div class="admin-user-info"><div class="admin-user-name">' + escapeHtml(u.username) + '</div>' +
+                        '<div class="admin-user-meta"><span>' + roleIcon + '</span><span>' + isBanned + '</span></div></div>' +
+                        '<div class="admin-user-actions"><button class="admin-btn-sm" onclick="simulateLogin(\'' + escapeAttr(u.username) + '\')">登录</button></div>' +
+                        '</div>';
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载失败</div>';
+            }
+        }
+
+        // v058: Load stats into page container
+        async function loadStatsPage() {
+            const container = document.getElementById('statsContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载中...</div>';
+            try {
+                let rpcData = null;
+                try {
+                    const { data, error: rpcError } = await sb.rpc('get_stats');
+                    if (!rpcError && data && data.success !== false) { rpcData = data; }
+                } catch (e) { /* RPC error */ }
+                if (!rpcData) {
+                    try {
+                        const [{ count: msgCount }, { count: todayCount }, { count: userCount }] = await Promise.all([
+                            sb.from('public_messages').select('*', { count: 'exact', head: true }),
+                            sb.from('public_messages').select('*', { count: 'exact', head: true }).gte('created_at', new Date().toISOString().split('T')[0]),
+                            sb.from('users').select('*', { count: 'exact', head: true }).eq('banned', false)
+                        ]);
+                        rpcData = { msg_count: msgCount || 0, today_count: todayCount || 0, user_count: userCount || 0 };
+                    } catch (e2) { /* direct query also failed */ }
+                }
+                if (!rpcData) {
+                    container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载统计失败</div>';
+                    return;
+                }
+                var totalMsgs = rpcData.msg_count || 0;
+                var todayMsgs = rpcData.today_count || 0;
+                var totalUsers = rpcData.user_count || 0;
+                var _onlineNames = (function(){ var r=[]; var v=Object.values(onlineUsers); for(var i=0;i<v.length;i++){var a=v[i]; if(Array.isArray(a)){for(var j=0;j<a.length;j++){if(a[j]&&a[j].name)r.push(a[j].name);}}} return [...new Set(r)]; })();
+                var currentOnline = _onlineNames.length;
+                container.innerHTML =
+                    '<div class="admin-stat-row"><span>群内消息总数</span><span class="stat-value">' + totalMsgs + '</span></div>' +
+                    '<div class="admin-stat-row"><span>今日消息数</span><span class="stat-value">' + todayMsgs + '</span></div>' +
+                    '<div class="admin-stat-row"><span>当前在线用户数</span><span class="stat-value">' + currentOnline + '</span></div>' +
+                    '<div class="admin-stat-row"><span>有效账号数</span><span class="stat-value">' + totalUsers + '</span></div>';
+            } catch (e) {
+                container.innerHTML = '<div style="text-align:center;color:var(--md-on-surface-dim);font-size:0.8rem;padding:20px;">加载统计失败</div>';
+            }
+        }
+
+        // v058: Clear messages from page
+        async function doClearMessages() {
+            if (!confirm('确定要清空所有公共消息吗？此操作不可撤销。')) return;
+            const isAdm = await verifyAdminSession();
+            if (!isAdm) { showSnackbar('无权限执行此操作'); return; }
+            try {
+                const { data, error } = await sb.rpc('clear_public_messages', {
+                    p_admin: currentUser,
+                    p_session_token: getSessionToken()
+                });
+                if (error || (data && data.success === false)) {
+                    showSnackbar('操作失败: ' + (data?.message || error?.message || ''));
+                    return;
+                }
+                showSnackbar('公共消息已清空');
+                publicMessages = [];
+                document.getElementById('publicMessages').innerHTML = '';
+                navigateBack();
+            } catch (e) {
+                showSnackbar('操作失败');
+            }
         }
 
         // ============================================
@@ -9848,12 +10226,11 @@
         var _cloudJoinLeaveEnabled = true;
 
         function showCloudControl() {
-            document.getElementById('cloudControlDialog').classList.remove('hidden');
-            loadCloudControl();
+            navigateTo('cloudControl');
         }
 
         function closeCloudControl() {
-            document.getElementById('cloudControlDialog').classList.add('hidden');
+            navigateBack();
         }
 
         async function loadCloudControl() {
@@ -10542,12 +10919,13 @@
 
         /* Removed: cleanupGarbledMsgs */
 
+        // v058: showClearDialog now redirects to page
         function showClearDialog() {
-            document.getElementById('clearDialog').classList.remove('hidden');
+            navigateTo('clearMessages');
         }
 
         function hideClearDialog() {
-            document.getElementById('clearDialog').classList.add('hidden');
+            // v058: no-op, using pages now
         }
 
         function showConfirm(title, message, callback) {
@@ -10861,6 +11239,25 @@
             } else if (page === 'about') {
                 pushPageHistory('about');
                 switchPage('aboutPage', true);
+            } else if (page === 'cloudControl') {
+                pushPageHistory('cloudControl');
+                switchPage('cloudControlPage', true);
+                loadCloudControl();
+            } else if (page === 'bannedUsers') {
+                pushPageHistory('bannedUsers');
+                switchPage('bannedUsersPage', true);
+                loadBannedUsersPage();
+            } else if (page === 'allUsers') {
+                pushPageHistory('allUsers');
+                switchPage('allUsersPage', true);
+                loadAllUsersPage();
+            } else if (page === 'stats') {
+                pushPageHistory('stats');
+                switchPage('statsPage', true);
+                loadStatsPage();
+            } else if (page === 'clearMessages') {
+                pushPageHistory('clearMessages');
+                switchPage('clearMessagesPage', true);
             }
             updateBackBadge();
         }
@@ -10880,7 +11277,13 @@
                                  prevPage === 'settings' ? 'settingsPage' :
                                  prevPage === 'about' ? 'aboutPage' :
                                  prevPage === 'soundSettings' ? 'soundSettingsPage' :
-                                 prevPage === 'blacklist' ? 'blacklistPage' : 'homePage';
+                                 prevPage === 'blacklist' ? 'blacklistPage' :
+                                 prevPage === 'cloudControl' ? 'cloudControlPage' :
+                                 prevPage === 'bannedUsers' ? 'bannedUsersPage' :
+                                 prevPage === 'allUsers' ? 'allUsersPage' :
+                                 prevPage === 'stats' ? 'statsPage' :
+                                 prevPage === 'clearMessages' ? 'clearMessagesPage' :
+                                 'homePage';
                 switchPage(targetId, false);
                 updateBackBadge();
             } else {
@@ -10999,11 +11402,10 @@
             name.textContent = currentUser;
             // Current user is always online (they are logged in); green dot unless banned.
             applyCurrentUserStatus(dot, avatar);
-            const adminItem = document.getElementById('homeAdminItem');
-            if (isAdmin) {
-                adminItem.style.display = 'flex';
-            } else {
-                adminItem.style.display = 'none';
+            // v058: 管理员功能移到设置页面
+            const settingsAdminGroup = document.getElementById('settingsAdminGroup');
+            if (settingsAdminGroup) {
+                settingsAdminGroup.style.display = isAdmin ? '' : 'none';
             }
         }
 
@@ -11037,12 +11439,7 @@
             }
             name.textContent = currentUser;
             applyCurrentUserStatus(dot, avatar);
-            const adminItem = document.getElementById('publicAdminItem');
-            if (isAdmin) {
-                adminItem.style.display = 'flex';
-            } else {
-                adminItem.style.display = 'none';
-            }
+            // v058: 管理员功能移到设置页面，这里不再需要
             // v053: update mute label/icon
             const muteLabel = document.getElementById('publicMuteLabel');
             const muteIcon = document.getElementById('publicMuteIcon');
@@ -11976,32 +12373,44 @@
         // v042: User Settings Persistence
         // ==========================================
 
+        // v059: 设置持久化 — 纯云端 RPC, 不依赖 localStorage
         async function loadUserSettings() {
             if (!sb || !currentUser) return;
             try {
+                // v059: 优先使用 RPC (SECURITY DEFINER, 不受 RLS 影响)
                 let settings = null;
                 try {
-                    const { data, error } = await sb.from('user_settings')
-                        .select('*')
-                        .eq('username', currentUser)
-                        .limit(1);
-                    if (!error && data && data.length > 0) {
-                        settings = data[0];
+                    const { data: rpcData, error: rpcError } = await sb.rpc('get_user_settings', { p_username: currentUser });
+                    if (!rpcError && rpcData && rpcData.success) {
+                        settings = rpcData;
+                    } else if (rpcError) {
+                        console.warn('[Settings] get_user_settings RPC error, falling back to direct query:', rpcError);
                     }
-                } catch (e) { /* table might not exist yet */ }
+                } catch (e) {
+                    console.warn('[Settings] get_user_settings exception:', e);
+                }
+
+                // 回退: 直接查询表
+                if (!settings) {
+                    try {
+                        const { data, error } = await sb.from('user_settings')
+                            .select('*')
+                            .eq('username', currentUser)
+                            .limit(1);
+                        if (!error && data && data.length > 0) {
+                            settings = data[0];
+                        }
+                    } catch (e) {
+                        console.warn('[Settings] direct query failed:', e);
+                    }
+                }
 
                 if (settings) {
                     _userSettings.theme = settings.theme || 'dark';
-                    // v053: load new fields
                     if (settings.sound_private) _soundPrivateId = settings.sound_private;
                     if (settings.sound_new_msg) _soundNewMsgId = settings.sound_new_msg;
                     if (typeof settings.private_notify !== 'undefined') _soundEnabled.privateNotify = !!settings.private_notify;
                     if (typeof settings.new_msg_notify !== 'undefined') _soundEnabled.newMsgNotify = !!settings.new_msg_notify;
-                } else {
-                    try {
-                        await sb.from('user_settings')
-                            .insert({ username: currentUser, theme: 'dark', sound_private: _soundPrivateId, sound_new_msg: _soundNewMsgId });
-                    } catch (e) { /* ignore insert error */ }
                 }
 
                 _userSettings.soundPrivate = _soundPrivateId;
@@ -12015,23 +12424,11 @@
                 if (darkCheck) darkCheck.innerHTML = (_userSettings.theme === 'dark') ? _mdCheckSvg : '';
                 if (lightCheck) lightCheck.innerHTML = (_userSettings.theme === 'light') ? _mdCheckSvg : '';
                 updateSettingsPageTheme();
-                // v053: 设置加载完成后，后台预载用户已选铃声到 localStorage
                 preloadUserSounds();
             } catch (e) {
-                try {
-                    var saved = localStorage.getItem('mjchat_settings');
-                    if (saved) {
-                        var parsed = JSON.parse(saved);
-                        _userSettings = Object.assign(_userSettings, parsed);
-                        if (parsed.soundPrivate) _soundPrivateId = parsed.soundPrivate;
-                        if (parsed.soundNewMsg) _soundNewMsgId = parsed.soundNewMsg;
-                        if (typeof parsed.privateNotify === 'boolean') _soundEnabled.privateNotify = parsed.privateNotify;
-                        if (typeof parsed.newMsgNotify === 'boolean') _soundEnabled.newMsgNotify = parsed.newMsgNotify;
-                        applyTheme(_userSettings.theme || 'dark');
-                    }
-                } catch (e2) { /* ignore */ }
-                // v053: 兜底路径也预载
-                preloadUserSounds();
+                console.error('[Settings] loadUserSettings error:', e);
+                // v059: 使用默认设置, 不再读 localStorage
+                applyTheme('dark');
             }
         }
 
@@ -12041,7 +12438,32 @@
             _userSettings.soundNewMsg = _soundNewMsgId;
             _userSettings.privateNotify = _soundEnabled.privateNotify;
             _userSettings.newMsgNotify = _soundEnabled.newMsgNotify;
+
+            // v059: 优先使用 RPC (SECURITY DEFINER, 不受 RLS 影响)
+            let saved = false;
+            let errMsg = null;
             try {
+                const { data: rpcData, error: rpcError } = await sb.rpc('save_user_settings', {
+                    p_username: currentUser,
+                    p_theme: _userSettings.theme,
+                    p_sound_private: _soundPrivateId,
+                    p_sound_new_msg: _soundNewMsgId,
+                    p_private_notify: _soundEnabled.privateNotify,
+                    p_new_msg_notify: _soundEnabled.newMsgNotify
+                });
+                if (!rpcError && rpcData && rpcData.success) {
+                    saved = true;
+                } else {
+                    errMsg = rpcData?.message || rpcError?.message || 'RPC返回异常';
+                    console.warn('[Settings] save_user_settings RPC failed:', rpcError, rpcData);
+                }
+            } catch (e) {
+                errMsg = e.message || 'RPC调用异常';
+                console.error('[Settings] save_user_settings exception:', e);
+            }
+
+            // 回退: 直接 upsert 表
+            if (!saved) {
                 try {
                     const { error } = await sb.from('user_settings')
                         .upsert({
@@ -12053,27 +12475,40 @@
                             new_msg_notify: _soundEnabled.newMsgNotify,
                             updated_at: new Date().toISOString()
                         }, { onConflict: 'username' });
-                    if (error) throw error;
-                } catch (e) {
-                    try {
-                        const { data: existing } = await sb.from('user_settings')
-                            .select('username')
-                            .eq('username', currentUser)
-                            .limit(1);
-                        if (existing && existing.length > 0) {
-                            await sb.from('user_settings')
-                                .update({ theme: _userSettings.theme, sound_private: _soundPrivateId, sound_new_msg: _soundNewMsgId, private_notify: _soundEnabled.privateNotify, new_msg_notify: _soundEnabled.newMsgNotify, updated_at: new Date().toISOString() })
-                                .eq('username', currentUser);
-                        } else {
-                            await sb.from('user_settings')
-                                .insert({ username: currentUser, theme: _userSettings.theme, sound_private: _soundPrivateId, sound_new_msg: _soundNewMsgId });
+                    if (!error) {
+                        saved = true;
+                    } else {
+                        console.warn('[Settings] direct upsert error:', error);
+                        // 最终回退: 先查再 insert/update
+                        try {
+                            const { data: existing } = await sb.from('user_settings')
+                                .select('username')
+                                .eq('username', currentUser)
+                                .limit(1);
+                            if (existing && existing.length > 0) {
+                                await sb.from('user_settings')
+                                    .update({ theme: _userSettings.theme, sound_private: _soundPrivateId, sound_new_msg: _soundNewMsgId, private_notify: _soundEnabled.privateNotify, new_msg_notify: _soundEnabled.newMsgNotify, updated_at: new Date().toISOString() })
+                                    .eq('username', currentUser);
+                                saved = true;
+                            } else {
+                                await sb.from('user_settings')
+                                    .insert({ username: currentUser, theme: _userSettings.theme, sound_private: _soundPrivateId, sound_new_msg: _soundNewMsgId });
+                                saved = true;
+                            }
+                        } catch (e2) {
+                            console.error('[Settings] final fallback failed:', e2);
                         }
-                    } catch (e2) { /* table might not exist */ }
+                    }
+                } catch (e) {
+                    console.error('[Settings] upsert exception:', e);
                 }
-                try {
-                    localStorage.setItem('mjchat_settings', JSON.stringify(_userSettings));
-                } catch (e3) { /* ignore */ }
-            } catch (e) { /* save failed silently */ }
+            }
+
+            // v059: 不再写 localStorage, 设置纯云端存储
+            if (!saved) {
+                console.error('[Settings] 保存失败:', errMsg);
+                showSnackbar('设置保存失败: ' + (errMsg || '未知错误'));
+            }
         }
 
         // v037: Use readyState check to ensure init() always runs
