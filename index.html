@@ -4909,16 +4909,20 @@
             <button class="back-btn" onclick="navigateBack()"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
             <span class="title">图片画廊</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-right:4px;">
-            <select id="galleryR18Select" style="background:var(--md-surface-2dp);color:var(--md-on-surface);border:1px solid var(--md-outline);border-radius:4px;padding:4px 8px;font-size:0.8rem;font-family:inherit;cursor:pointer;">
-                <option value="0">无R18</option>
-                <option value="1">R18</option>
-                <option value="2" selected>混合</option>
-            </select>
-            <button class="icon-button" onclick="loadGalleryImages()" title="刷新">
-                <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-            </button>
-        </div>
+<div style="display:flex;align-items:center;gap:8px;margin-right:4px;">
+    <select id="galleryR18Select" style="background:var(--md-surface-2dp);color:var(--md-on-surface);border:1px solid var(--md-outline);border-radius:4px;padding:4px 8px;font-size:0.8rem;font-family:inherit;cursor:pointer;">
+        <option value="0">无R18</option>
+        <option value="1">R18</option>
+        <option value="2" selected>混合</option>
+    </select>
+    <select id="galleryProxyMode" style="background:var(--md-surface-2dp);color:var(--md-on-surface);border:1px solid var(--md-outline);border-radius:4px;padding:4px 8px;font-size:0.8rem;font-family:inherit;cursor:pointer;">
+        <option value="auto">自动代理</option>
+        <option value="direct">直连</option>
+    </select>
+    <button class="icon-button" onclick="loadGalleryImages(true)" title="刷新">
+        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    </button>
+</div>
     </div>
     <div class="sp-body" id="galleryBody" style="padding:16px;display:flex;flex-direction:column;gap:16px;">
         <div id="galleryLoading" style="text-align:center;padding:40px;color:var(--md-on-surface-dim);">
@@ -14197,54 +14201,144 @@
             }
         }
         
-        // ============================================
-// 图片画廊 (Lolicon API) - 新增功能
-// ============================================
 
 function showImageGallery() {
     pushPageHistory('imageGallery');
     switchPage('imageGalleryPage', true);
-    loadGalleryImages();
+    loadGalleryImages(true);  // 强制刷新
 }
 
-async function loadGalleryImages() {
+async function loadGalleryImages(forceRefresh = false) {
     const grid = document.getElementById('galleryGrid');
     const loading = document.getElementById('galleryLoading');
     const empty = document.getElementById('galleryEmpty');
     if (!grid) return;
+
+    // 强制刷新：清空所有内容
     loading.style.display = 'block';
     grid.style.display = 'none';
     empty.style.display = 'none';
-    grid.innerHTML = '';
+    grid.innerHTML = '';  // 彻底清除旧的图片
+
     const r18Select = document.getElementById('galleryR18Select');
     const r18Value = r18Select ? parseInt(r18Select.value) : 2;
+
+    const modeSelect = document.getElementById('galleryProxyMode');
+    const mode = modeSelect ? modeSelect.value : 'auto';
+
+    const targetUrl = `https://api.lolicon.app/setu/v2?r18=${r18Value}`;
+
+    let result = null;
+
     try {
-        const url = `https://api.lolicon.app/setu/v2?r18=${r18Value}&size=original&num=30`;
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('API请求失败');
-        const result = await response.json();
+        if (mode === 'direct') {
+            console.log('[Gallery] 直连模式');
+            const response = await fetch(targetUrl);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            result = await response.json();
+        } else {
+            const proxies = [
+                url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                url => `https://cors-anywhere.herokuapp.com/${url}`
+            ];
+            for (const proxy of proxies) {
+                try {
+                    const proxyUrl = proxy(targetUrl);
+                    console.log(`[Gallery] 尝试代理: ${proxyUrl}`);
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 8000);
+                    const response = await fetch(proxyUrl, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const text = await response.text();
+                    result = JSON.parse(text);
+                    if (result && result.data && result.data.length > 0) {
+                        console.log('[Gallery] 代理成功');
+                        break;
+                    }
+                } catch (err) {
+                    console.warn('[Gallery] 代理失败:', err);
+                }
+            }
+        }
+
         loading.style.display = 'none';
-        if (!result.data || result.data.length === 0) {
+
+        if (!result || !result.data || result.data.length === 0) {
             empty.style.display = 'block';
+            empty.innerHTML = `
+                <div style="font-size:0.95rem;color:var(--md-on-surface);margin-bottom:8px;">加载失败，请检查网络或切换模式</div>
+                <div style="font-size:0.8rem;color:var(--md-on-surface-dim);margin-bottom:12px;">
+                    当前模式：${mode === 'direct' ? '直连（可能受跨域限制）' : '自动代理'}
+                </div>
+                <a href="${targetUrl}" target="_blank" style="color:var(--md-primary);text-decoration:underline;font-size:0.9rem;cursor:pointer;display:inline-block;padding:8px 16px;border:1px solid var(--md-primary);border-radius:8px;margin-bottom:12px;">查看 API 原始数据</a>
+                <div>
+                    <button onclick="loadGalleryImages(true)" style="background:var(--md-primary);color:var(--md-on-primary);border:none;padding:8px 20px;border-radius:8px;font-size:0.85rem;cursor:pointer;">重试</button>
+                </div>
+            `;
             return;
         }
+
+        // 渲染图片 - 背景自适应
         grid.style.display = 'grid';
         result.data.forEach(item => {
             const card = document.createElement('div');
-            card.style.cssText = `background:var(--md-surface-2dp);border-radius:12px;overflow:hidden;box-shadow:var(--md-elevation-2);transition:transform 0.2s,box-shadow 0.2s;display:flex;flex-direction:column;cursor:pointer;`;
-            card.onmouseenter = () => { card.style.transform = 'scale(1.02)'; card.style.boxShadow = 'var(--md-elevation-4)'; };
-            card.onmouseleave = () => { card.style.transform = 'scale(1)'; card.style.boxShadow = 'var(--md-elevation-2)'; };
+            card.style.cssText = `
+                background: var(--md-surface-2dp);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: var(--md-elevation-2);
+                transition: transform 0.2s, box-shadow 0.2s;
+                display: flex;
+                flex-direction: column;
+                cursor: pointer;
+            `;
+            card.onmouseenter = () => {
+                card.style.transform = 'scale(1.02)';
+                card.style.boxShadow = 'var(--md-elevation-4)';
+            };
+            card.onmouseleave = () => {
+                card.style.transform = 'scale(1)';
+                card.style.boxShadow = 'var(--md-elevation-2)';
+            };
+
+            // 图片容器 - 高度由图片撑开，不设固定高度
             const imgWrap = document.createElement('div');
-            imgWrap.style.cssText = `position:relative;padding-top:75%;background:var(--md-surface-1dp);overflow:hidden;`;
+            imgWrap.style.cssText = `
+                width: 100%;
+                background: var(--md-surface-1dp);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+            `;
+
             const img = document.createElement('img');
             img.src = item.urls.original || item.url;
             img.alt = item.title || '图片';
-            img.style.cssText = `position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transition:transform 0.3s;`;
+            // 关键：图片宽度100%，高度自适应，最大高度300px，保持比例
+            img.style.cssText = `
+                width: 100%;
+                height: auto;
+                max-height: 300px;
+                object-fit: contain;
+                display: block;
+            `;
             img.loading = 'lazy';
-            img.onerror = () => { img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150"%3E%3Crect fill="%23333" width="200" height="150"/%3E%3Ctext x="50%25" y="50%25" font-family="sans-serif" font-size="16" fill="%23999" text-anchor="middle" dy=".3em"%3E加载失败%3C/text%3E%3C/svg%3E'; };
-            img.onclick = (e) => { e.stopPropagation(); window.open(item.urls.original || item.url, '_blank'); };
+            img.onerror = () => {
+                img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150"%3E%3Crect fill="%23333" width="200" height="150"/%3E%3Ctext x="50%25" y="50%25" font-family="sans-serif" font-size="16" fill="%23999" text-anchor="middle" dy=".3em"%3E加载失败%3C/text%3E%3C/svg%3E';
+                img.style.height = '150px';
+                img.style.objectFit = 'cover';
+            };
+            img.onclick = (e) => {
+                e.stopPropagation();
+                window.open(item.urls.original || item.url, '_blank');
+            };
+
             imgWrap.appendChild(img);
             card.appendChild(imgWrap);
+
             const meta = document.createElement('div');
             meta.style.cssText = `padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:4px;`;
             const titleEl = document.createElement('div');
@@ -14286,7 +14380,12 @@ async function loadGalleryImages() {
     } catch (error) {
         loading.style.display = 'none';
         empty.style.display = 'block';
-        empty.textContent = '加载失败：' + error.message;
+        empty.innerHTML = `
+            <div style="font-size:0.95rem;color:var(--md-on-surface);margin-bottom:8px;">加载出错：${error.message}</div>
+            <div style="margin-top:12px;">
+                <button onclick="loadGalleryImages(true)" style="background:var(--md-primary);color:var(--md-on-primary);border:none;padding:8px 20px;border-radius:8px;font-size:0.85rem;cursor:pointer;">重试</button>
+            </div>
+        `;
         console.error('Gallery load error:', error);
     }
 }
